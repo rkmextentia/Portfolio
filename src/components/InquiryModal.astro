@@ -304,43 +304,75 @@
           submitBtn.innerHTML = '<span>Sending to rkmvedant@gmail.com...</span>';
         }
 
-        const API_BASE = window.location.hostname === 'localhost' 
-          ? 'http://localhost:4322' 
-          : window.location.origin;
+        let dispatched = false;
+        const generatedInqId = 'RKM-INQ-' + Date.now().toString(36).toUpperCase();
+        let mailtoUrl = `mailto:rkmvedant@gmail.com?subject=${encodeURIComponent(`[RKMIDIGILABS Inquiry] ${payload.service} - ${payload.name}`)}&body=${encodeURIComponent(`Dear Rajesh / RKMIDIGILABS Team,\n\nRef: ${generatedInqId}\nService Requested: ${payload.service}\n\nClient Name: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone}\n\nProject Scope & Questions:\n${payload.description}\n\n--\nSubmitted via RKMIDIGILABS Portal`)}`;
 
-        try {
-          const res = await fetch(`${API_BASE}/api/inquire`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          const data = await res.json();
-          if (data.success) {
-            if (successRefId) successRefId.textContent = data.inquiryId || 'RKM-INQ';
-            if (successServiceName) successServiceName.textContent = payload.service;
-            
-            // Set direct mailto fallback
-            if (directMailtoBtn && data.mailtoUrl) {
-              directMailtoBtn.href = data.mailtoUrl;
+        // 1. If local environment, attempt local dual-stack API server
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) {
+          try {
+            const res = await fetch('http://localhost:4322/api/inquire', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success) {
+                dispatched = true;
+                if (data.mailtoUrl) mailtoUrl = data.mailtoUrl;
+              }
             }
-
-            // Set WhatsApp fallback
-            if (directWhatsappBtn) {
-              const waMsg = `*RKMIDIGILABS Service Inquiry*\n\nRef: ${data.inquiryId}\nName: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone}\nService: ${payload.service}\n\nRequirements:\n${payload.description}`;
-              directWhatsappBtn.href = `https://wa.me/919371650121?text=${encodeURIComponent(waMsg)}`;
-            }
-
-            // Switch to success view
-            form.classList.add('hidden');
-            if (successView) successView.classList.remove('hidden');
-          } else {
-            alert(data.error || 'Failed to dispatch inquiry. Please try again.');
+          } catch (e) {
+            console.warn('Local API server offline, using live cloud dispatcher...');
           }
-        } catch (err) {
-          // Graceful fallback to mailto if API unreachable
-          const mailto = `mailto:rkmvedant@gmail.com?subject=${encodeURIComponent(`[RKMIDIGILABS Inquiry] ${payload.service} - ${payload.name}`)}&body=${encodeURIComponent(`Name: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone}\nService: ${payload.service}\n\n${payload.description}`)}`;
-          window.location.href = mailto;
+        }
+
+        // 2. If live deployment (or local API offline), use free cloud email dispatcher
+        if (!dispatched) {
+          try {
+            const res = await fetch('https://formsubmit.co/ajax/rkmvedant@gmail.com', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                _subject: `[RKMIDIGILABS Lead] ${payload.service} - ${payload.name}`,
+                _template: 'table',
+                "Inquiry ID": generatedInqId,
+                "Client Name": payload.name,
+                "Client Email": payload.email,
+                "Phone Number": payload.phone,
+                "Requested Service": payload.service,
+                "Project Scope / Requirements": payload.description
+              })
+            });
+            if (res.ok) {
+              dispatched = true;
+            }
+          } catch (cloudErr) {
+            console.error('Cloud email dispatch error:', cloudErr);
+          }
+        }
+
+        if (dispatched) {
+          if (successRefId) successRefId.textContent = generatedInqId;
+          if (successServiceName) successServiceName.textContent = payload.service;
+          
+          if (directMailtoBtn) directMailtoBtn.href = mailtoUrl;
+
+          if (directWhatsappBtn) {
+            const waMsg = `*RKMIDIGILABS Service Inquiry*\n\nRef: ${generatedInqId}\nName: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone}\nService: ${payload.service}\n\nRequirements:\n${payload.description}`;
+            directWhatsappBtn.href = `https://wa.me/919371650121?text=${encodeURIComponent(waMsg)}`;
+          }
+
+          form.classList.add('hidden');
+          if (successView) successView.classList.remove('hidden');
+        } else {
+          // Graceful fallback to mailto if all network dispatch fails
+          window.location.href = mailtoUrl;
         } finally {
           if (submitBtn) {
             submitBtn.disabled = false;
