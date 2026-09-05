@@ -1,0 +1,465 @@
+﻿---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { COURSES, type Course, type Lesson } from '../../../lib/courses-data';
+
+export function getStaticPaths() {
+  return COURSES.map(course => ({
+    params: { slug: course.slug },
+    props: { course }
+  }));
+}
+
+interface Props {
+  course: Course;
+}
+
+const { course } = Astro.props;
+const lessons = course.lessons;
+const initialLesson = lessons[0];
+---
+
+<BaseLayout 
+  title={`${course.title} — Video Classroom | RKMIDIGILABS`} 
+  description={`Interactive video learning portal for ${course.title}.`}
+>
+  <!-- Classroom Top Bar -->
+  <div class="bg-[#0b182d] text-white border-b border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a 
+        href={`/courses/${course.slug}`} 
+        class="text-xs font-mono text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        <span class="hidden sm:inline">Course Overview</span>
+      </a>
+      <span class="text-slate-600 hidden sm:inline">•</span>
+      <h1 class="text-xs sm:text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+        {course.title}
+      </h1>
+    </div>
+
+    <div class="flex items-center gap-3 text-xs font-mono">
+      <div id="enrollment-status-badge" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+        Checking access...
+      </div>
+      <a 
+        href="/dashboard" 
+        class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-colors"
+      >
+        My Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Classroom Stage -->
+  <div class="bg-slate-950 text-white min-h-[calc(100vh-130px)]">
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12">
+      
+      <!-- Left / Center: Video Player & Lesson Stage (8 cols) -->
+      <div class="lg:col-span-8 p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
+        
+        <!-- Video Container -->
+        <div>
+          <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 group">
+            
+            <!-- Video Iframe -->
+            <iframe 
+              id="main-video-player"
+              src={initialLesson.videoUrl} 
+              title={initialLesson.title}
+              class="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+
+            <!-- Locked Overlay (Shows if lesson is premium and student not enrolled) -->
+            <div id="locked-overlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
+              <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-black text-white mb-2">
+                This Lesson is Locked
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-400 max-w-md mb-6 leading-relaxed">
+                Enroll in <strong class="text-white">{course.title}</strong> to unlock all {course.totalLessons} video modules, complete policy templates, and earn your certificate.
+              </p>
+              <div class="flex flex-col sm:flex-row items-center gap-3">
+                <button 
+                  id="enroll-now-btn"
+                  class="py-3 px-6 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] text-white transition-all shadow-lg cursor-pointer flex items-center gap-2"
+                >
+                  <span>Unlock Course for ₹{course.priceInr.toLocaleString('en-IN')}</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+                <button 
+                  id="switch-to-preview-btn"
+                  class="py-3 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                >
+                  Watch Free Preview Lesson
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Video Controls & Metadata -->
+          <div class="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span id="active-lesson-index" class="text-xs font-mono font-bold text-emerald-400">
+                  Module 1 of {course.totalLessons}
+                </span>
+                <span id="active-lesson-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 font-mono">
+                  Free Preview
+                </span>
+              </div>
+              <h2 id="active-lesson-title" class="text-xl sm:text-2xl font-black text-white leading-snug">
+                {initialLesson.title}
+              </h2>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+              <button 
+                id="toggle-complete-btn"
+                class="px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span id="complete-btn-text">Mark Completed</span>
+              </button>
+
+              <button 
+                id="next-lesson-btn"
+                class="px-4 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Next Lesson</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Lesson Details & Description -->
+          <div class="mt-6 space-y-4">
+            <h3 class="text-sm font-bold font-mono text-slate-300 uppercase tracking-wider">Lesson Overview</h3>
+            <p id="active-lesson-desc" class="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-3xl">
+              {initialLesson.description}
+            </p>
+          </div>
+
+          <!-- Downloadable Course Resources Tab -->
+          <div class="mt-8 p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <h3 class="text-sm font-bold font-mono text-white mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Downloadable Lesson Attachments & Templates</span>
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+              <a 
+                href="/company-profile" 
+                class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors flex items-center justify-between border border-slate-700/60"
+              >
+                <span>📄 Module Slide Deck (PDF)</span>
+                <span class="text-emerald-400 text-[11px]">Download</span>
+              </a>
+              <a 
+                href="/frameworks" 
+                class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors flex items-center justify-between border border-slate-700/60"
+              >
+                <span>📊 Audit Checklist & Risk Register</span>
+                <span class="text-emerald-400 text-[11px]">Download</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Playlist & Curriculum Sidebar (4 cols) -->
+      <div class="lg:col-span-4 bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-4 sm:p-6 flex flex-col justify-between">
+        <div>
+          <div class="pb-4 mb-4 border-b border-slate-800">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-black text-base text-white">Course Playlist</h3>
+              <span id="playlist-progress-text" class="text-xs font-mono text-emerald-400">0 of {course.totalLessons} done</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div id="playlist-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300 w-0"></div>
+            </div>
+          </div>
+
+          <!-- Playlist Items -->
+          <div class="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-1" id="playlist-container">
+            {lessons.map((lesson, idx) => (
+              <button 
+                type="button"
+                data-lesson-id={lesson.id}
+                data-order={lesson.orderIndex}
+                data-title={lesson.title}
+                data-desc={lesson.description}
+                data-url={lesson.videoUrl}
+                data-preview={lesson.isFreePreview ? 'true' : 'false'}
+                data-duration={lesson.duration}
+                class={`playlist-item w-full text-left p-3.5 rounded-xl border transition-all flex items-start gap-3 cursor-pointer ${
+                  idx === 0 
+                    ? 'bg-emerald-950/40 border-emerald-500/50 text-white' 
+                    : 'bg-slate-800/40 border-slate-800/80 text-slate-300 hover:bg-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div class="item-check-icon w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  {idx + 1}
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="text-[10px] font-mono text-slate-400 uppercase">Module {idx + 1}</span>
+                    <div class="flex items-center gap-1.5">
+                      {lesson.isFreePreview ? (
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400">
+                          PREVIEW
+                        </span>
+                      ) : (
+                        <span class="lock-indicator text-slate-500 text-[10px]">🔒</span>
+                      )}
+                      <span class="text-[10px] font-mono text-slate-400">{lesson.duration}</span>
+                    </div>
+                  </div>
+                  <h4 class="text-xs font-bold leading-snug text-white line-clamp-2">
+                    {lesson.title}
+                  </h4>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- Sidebar Footer & Help -->
+        <div class="mt-6 pt-4 border-t border-slate-800">
+          <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span>Instructor: {course.instructor.name}</span>
+            <a href="https://wa.me/919371650121" target="_blank" class="text-emerald-400 hover:underline">
+              Need Help? WhatsApp
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Enrollment Checkout Modal -->
+  <div id="checkout-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white text-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6">
+      <div class="flex items-start justify-between">
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800">
+            Instant Enrollment
+          </span>
+          <h3 class="text-xl font-black text-slate-900 mt-2">
+            Unlock {course.title}
+          </h3>
+        </div>
+        <button id="close-checkout-modal" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">×</button>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+        <div class="flex justify-between font-bold text-slate-700">
+          <span>Masterclass Lifetime Pass</span>
+          <span>₹{course.priceInr.toLocaleString('en-IN')}</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>Taxes & GST</span>
+          <span>Included</span>
+        </div>
+        <div class="border-t border-slate-200 pt-2 flex justify-between font-black text-sm text-slate-900">
+          <span>Total Payable</span>
+          <span class="text-emerald-700">₹{course.priceInr.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+
+      <!-- Payment Confirmation Simulator / Razorpay Trigger -->
+      <div class="space-y-3">
+        <button 
+          id="confirm-enrollment-btn"
+          class="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] text-white text-center transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2"
+        >
+          <span>Complete Enrollment & Unlock Videos</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        </button>
+
+        <p class="text-[11px] text-center text-slate-500">
+          Instant activation • 30-Day satisfaction guarantee • Certificate included
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side Classroom Controller -->
+  <script define:vars={{ courseId: course.id, totalLessons: course.totalLessons }}>
+    const STORAGE_ENROLL_KEY = 'rkmidigi_enrolled_courses';
+    const STORAGE_PROGRESS_KEY = `rkmidigi_progress_${courseId}`;
+
+    // Elements
+    const player = document.getElementById('main-video-player');
+    const lockedOverlay = document.getElementById('locked-overlay');
+    const lessonTitle = document.getElementById('active-lesson-title');
+    const lessonIndex = document.getElementById('active-lesson-index');
+    const lessonBadge = document.getElementById('active-lesson-badge');
+    const lessonDesc = document.getElementById('active-lesson-desc');
+    const statusBadge = document.getElementById('enrollment-status-badge');
+    const toggleCompleteBtn = document.getElementById('toggle-complete-btn');
+    const completeBtnText = document.getElementById('complete-btn-text');
+    const nextBtn = document.getElementById('next-lesson-btn');
+    const enrollNowBtn = document.getElementById('enroll-now-btn');
+    const switchToPreviewBtn = document.getElementById('switch-to-preview-btn');
+    const checkoutModal = document.getElementById('checkout-modal');
+    const closeCheckoutBtn = document.getElementById('close-checkout-modal');
+    const confirmEnrollBtn = document.getElementById('confirm-enrollment-btn');
+    const progressText = document.getElementById('playlist-progress-text');
+    const progressBar = document.getElementById('playlist-progress-bar');
+    const playlistItems = document.querySelectorAll('.playlist-item');
+
+    let currentLessonId = playlistItems[0]?.getAttribute('data-lesson-id') || '';
+    let completedLessons = JSON.parse(localStorage.getItem(STORAGE_PROGRESS_KEY) || '[]');
+
+    function isCourseEnrolled() {
+      const enrolled = JSON.parse(localStorage.getItem(STORAGE_ENROLL_KEY) || '[]');
+      return enrolled.includes(courseId);
+    }
+
+    function updateAccessUI() {
+      const isEnrolled = isCourseEnrolled();
+      if (statusBadge) {
+        statusBadge.textContent = isEnrolled ? '✓ Enrolled (Full Access)' : 'Preview Mode';
+        statusBadge.className = isEnrolled 
+          ? 'px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+          : 'px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+      }
+
+      // Update lock indicators in sidebar
+      document.querySelectorAll('.lock-indicator').forEach(el => {
+        if (isEnrolled) {
+          el.textContent = '✓';
+          el.classList.add('text-emerald-400');
+        }
+      });
+    }
+
+    function updateProgressBar() {
+      const count = completedLessons.length;
+      if (progressText) progressText.textContent = `${count} of ${totalLessons} done`;
+      if (progressBar) {
+        const pct = Math.round((count / totalLessons) * 100);
+        progressBar.style.width = `${pct}%`;
+      }
+    }
+
+    function selectLesson(btn) {
+      if (!btn) return;
+      
+      const id = btn.getAttribute('data-lesson-id');
+      const order = btn.getAttribute('data-order');
+      const title = btn.getAttribute('data-title');
+      const desc = btn.getAttribute('data-desc');
+      const url = btn.getAttribute('data-url');
+      const isPreview = btn.getAttribute('data-preview') === 'true';
+
+      currentLessonId = id;
+
+      // Update Playlist Active Styles
+      playlistItems.forEach(item => {
+        item.classList.remove('bg-emerald-950/40', 'border-emerald-500/50', 'text-white');
+        item.classList.add('bg-slate-800/40', 'border-slate-800/80', 'text-slate-300');
+      });
+      btn.classList.add('bg-emerald-950/40', 'border-emerald-500/50', 'text-white');
+      btn.classList.remove('bg-slate-800/40', 'border-slate-800/80', 'text-slate-300');
+
+      // Update Meta
+      if (lessonTitle) lessonTitle.textContent = title;
+      if (lessonIndex) lessonIndex.textContent = `Module ${order} of ${totalLessons}`;
+      if (lessonDesc) lessonDesc.textContent = desc;
+      if (lessonBadge) {
+        lessonBadge.textContent = isPreview ? 'Free Preview' : 'Full Module';
+        lessonBadge.className = isPreview 
+          ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 font-mono' 
+          : 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 font-mono';
+      }
+
+      // Check Access
+      const isEnrolled = isCourseEnrolled();
+      if (!isPreview && !isEnrolled) {
+        // Locked
+        if (lockedOverlay) lockedOverlay.classList.remove('hidden');
+      } else {
+        // Unlocked
+        if (lockedOverlay) lockedOverlay.classList.add('hidden');
+        if (player && url) player.src = url;
+      }
+
+      // Update completion button state
+      const isCompleted = completedLessons.includes(id);
+      if (completeBtnText) completeBtnText.textContent = isCompleted ? 'Completed ✓' : 'Mark Completed';
+    }
+
+    // Event Listeners for Playlist Items
+    playlistItems.forEach(item => {
+      item.addEventListener('click', () => selectLesson(item));
+    });
+
+    // Mark completed toggle
+    toggleCompleteBtn?.addEventListener('click', () => {
+      if (!currentLessonId) return;
+      if (completedLessons.includes(currentLessonId)) {
+        completedLessons = completedLessons.filter(id => id !== currentLessonId);
+      } else {
+        completedLessons.push(currentLessonId);
+      }
+      localStorage.setItem(STORAGE_PROGRESS_KEY, JSON.stringify(completedLessons));
+      updateProgressBar();
+
+      const isCompleted = completedLessons.includes(currentLessonId);
+      if (completeBtnText) completeBtnText.textContent = isCompleted ? 'Completed ✓' : 'Mark Completed';
+    });
+
+    // Next Lesson Button
+    nextBtn?.addEventListener('click', () => {
+      let currentIndex = -1;
+      playlistItems.forEach((item, idx) => {
+        if (item.getAttribute('data-lesson-id') === currentLessonId) currentIndex = idx;
+      });
+      if (currentIndex >= 0 && currentIndex < playlistItems.length - 1) {
+        selectLesson(playlistItems[currentIndex + 1]);
+      }
+    });
+
+    // Modals
+    enrollNowBtn?.addEventListener('click', () => {
+      checkoutModal?.classList.remove('hidden');
+    });
+    closeCheckoutBtn?.addEventListener('click', () => {
+      checkoutModal?.classList.add('hidden');
+    });
+    switchToPreviewBtn?.addEventListener('click', () => {
+      selectLesson(playlistItems[0]);
+    });
+
+    // Confirm enrollment action
+    confirmEnrollBtn?.addEventListener('click', () => {
+      const enrolled = JSON.parse(localStorage.getItem(STORAGE_ENROLL_KEY) || '[]');
+      if (!enrolled.includes(courseId)) {
+        enrolled.push(courseId);
+        localStorage.setItem(STORAGE_ENROLL_KEY, JSON.stringify(enrolled));
+      }
+      checkoutModal?.classList.add('hidden');
+      updateAccessUI();
+      selectLesson(document.querySelector(`[data-lesson-id="${currentLessonId}"]`));
+      alert('🎉 Congratulations! You have full access to this Masterclass.');
+    });
+
+    // Initial load
+    updateAccessUI();
+    updateProgressBar();
+    selectLesson(playlistItems[0]);
+  </script>
+</BaseLayout>

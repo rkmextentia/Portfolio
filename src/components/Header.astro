@@ -1,6 +1,7 @@
 ---
 const navLinks = [
   { name: "Home", href: "/" },
+  { name: "Courses / Academy", href: "/courses" },
   { name: "Profile & Brochure", href: "/company-profile" },
   { name: "Blog", href: "/blog" },
   { name: "Services", href: "/services" },
@@ -82,6 +83,16 @@ const currentPath = Astro.url.pathname;
           aria-label="X Twitter Profile"
         >
           <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+
+        <!-- Student Portal CTA -->
+        <a 
+          href="/dashboard" 
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono font-bold bg-[#1d3d75] hover:bg-[#254d93] text-emerald-300 border border-emerald-500/30 transition-all shadow-xs"
+          title="Student Learning Portal & Enrolled Courses"
+        >
+          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          <span>Student Portal</span>
         </a>
 
         <!-- Green Corporate Primary CTA Button -->

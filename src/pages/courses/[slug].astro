@@ -1,0 +1,312 @@
+﻿---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COURSES, type Course } from '../../lib/courses-data';
+
+export function getStaticPaths() {
+  return COURSES.map(course => ({
+    params: { slug: course.slug },
+    props: { course }
+  }));
+}
+
+interface Props {
+  course: Course;
+}
+
+const { course } = Astro.props;
+const firstPreviewLesson = course.lessons.find(l => l.isFreePreview) || course.lessons[0];
+---
+
+<BaseLayout 
+  title={`${course.title} — RKMIDIGILABS Academy`} 
+  description={course.summary}
+>
+  <!-- Course Header Banner -->
+  <section class="bg-gradient-to-b from-[#112649] via-[#0d1e3a] to-slate-900 text-white py-14 sm:py-18 border-b border-[#1d3d75]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-2 text-xs font-mono text-slate-400 mb-6">
+        <a href="/" class="hover:text-white">Home</a>
+        <span>/</span>
+        <a href="/courses" class="hover:text-white">Academy</a>
+        <span>/</span>
+        <span class="text-emerald-400 font-bold truncate">{course.category}</span>
+      </nav>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+        
+        <!-- Left: Course Overview & Details -->
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              {course.category}
+            </span>
+            <span class="px-2.5 py-1 rounded-full text-xs font-mono text-slate-300 bg-slate-800 border border-slate-700">
+              {course.level}
+            </span>
+            <span class="px-2.5 py-1 rounded-full text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800">
+              ✓ Verified Curriculum
+            </span>
+          </div>
+
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+            {course.title}
+          </h1>
+
+          <p class="text-base sm:text-lg text-slate-300 leading-relaxed">
+            {course.subtitle}
+          </p>
+
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed pt-2">
+            {course.description}
+          </p>
+
+          <!-- Key Meta Bar -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-700/60 text-xs font-mono">
+            <div>
+              <div class="text-slate-400">Total Duration</div>
+              <div class="text-base font-bold text-white mt-0.5">{course.durationHours}</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Curriculum</div>
+              <div class="text-base font-bold text-white mt-0.5">{course.totalLessons} Modules</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Access Format</div>
+              <div class="text-base font-bold text-emerald-400 mt-0.5">Instant HD Video</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Certificate</div>
+              <div class="text-base font-bold text-emerald-400 mt-0.5">Included</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Enrollment & Video Preview Card -->
+        <div class="bg-white text-slate-900 rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xl lg:sticky lg:top-24">
+          
+          <!-- Free Preview Embed Box -->
+          <div class="relative rounded-xl overflow-hidden aspect-video bg-slate-900 mb-6 shadow-inner border border-slate-300 group">
+            <iframe 
+              src={firstPreviewLesson.videoUrl} 
+              title={firstPreviewLesson.title}
+              class="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
+
+          <!-- Pricing Area -->
+          <div class="mb-6">
+            <div class="flex items-baseline gap-3">
+              <span class="text-3xl sm:text-4xl font-black text-slate-900">₹{course.priceInr.toLocaleString('en-IN')}</span>
+              <span class="text-sm font-mono text-slate-400 line-through">₹{course.originalPriceInr.toLocaleString('en-IN')}</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">
+                {Math.round((1 - course.priceInr / course.originalPriceInr) * 100)}% OFF
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-1">One-time payment • Lifetime access • All future updates included</p>
+          </div>
+
+          <!-- CTAs -->
+          <div class="space-y-3">
+            <a 
+              href={`/courses/${course.slug}/learn`}
+              class="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] text-white text-center transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Enroll in Masterclass</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+
+            <a 
+              href={`/courses/${course.slug}/learn`}
+              class="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 text-center transition-colors block"
+            >
+              Watch Free Preview Lesson ({firstPreviewLesson.duration})
+            </a>
+          </div>
+
+          <!-- Included Features -->
+          <div class="mt-6 pt-6 border-t border-slate-100 space-y-2.5 text-xs text-slate-600">
+            <div class="font-bold text-slate-900 font-mono uppercase text-[11px]">This masterclass includes:</div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>{course.durationHours} on-demand video lectures</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Downloadable policy templates & checklists</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Official RKMIDIGILABS Certificate of Completion</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Direct Q&A with Lead Practice Advisor</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Detailed Syllabus & Learning Modules -->
+  <section class="py-16 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+        
+        <div class="lg:col-span-2 space-y-10">
+          
+          <!-- What You'll Learn -->
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs">
+            <h2 class="text-xl font-black text-slate-900 tracking-tight mb-4">
+              What You Will Learn
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {course.whatYouWillLearn.map(item => (
+                <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
+                  <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Complete Curriculum Syllabus -->
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+              <div>
+                <h2 class="text-xl font-black text-slate-900 tracking-tight">
+                  Course Curriculum & Video Lectures
+                </h2>
+                <p class="text-xs text-slate-500 font-mono mt-0.5">{course.totalLessons} lessons • {course.durationHours} total length</p>
+              </div>
+              <a 
+                href={`/courses/${course.slug}/learn`}
+                class="text-xs font-bold text-emerald-700 hover:text-emerald-800 font-mono inline-flex items-center gap-1"
+              >
+                Launch Classroom Player →
+              </a>
+            </div>
+
+            <div class="space-y-3">
+              {course.lessons.map((lesson, idx) => (
+                <div class="p-4 rounded-xl border border-slate-200 hover:border-emerald-300 bg-slate-50/60 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-start gap-3">
+                    <span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-bold text-slate-900 leading-snug">
+                          {lesson.title}
+                        </h4>
+                        {lesson.isFreePreview && (
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase font-mono">
+                            Free Preview
+                          </span>
+                        )}
+                      </div>
+                      <p class="text-xs text-slate-500 mt-1 line-clamp-1">
+                        {lesson.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    <span class="text-xs font-mono text-slate-500">{lesson.duration}</span>
+                    <a 
+                      href={`/courses/${course.slug}/learn?lesson=${lesson.id}`}
+                      class={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                        lesson.isFreePreview 
+                          ? 'bg-[#16A34A] hover:bg-[#15803D] text-white' 
+                          : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                      }`}
+                    >
+                      {lesson.isFreePreview ? 'Watch Free' : 'Start'}
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Target Audience & Prerequisites -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200">
+              <h3 class="text-base font-black text-slate-900 mb-3">Who This Course Is For</h3>
+              <ul class="space-y-2 text-xs text-slate-600">
+                {course.targetAudience.map(t => (
+                  <li class="flex items-start gap-2">
+                    <span class="text-emerald-500 font-bold">•</span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 border border-slate-200">
+              <h3 class="text-base font-black text-slate-900 mb-3">Requirements & Prerequisites</h3>
+              <ul class="space-y-2 text-xs text-slate-600">
+                {course.prerequisites.map(p => (
+                  <li class="flex items-start gap-2">
+                    <span class="text-emerald-500 font-bold">•</span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Instructor Profile Card -->
+        <div class="space-y-6">
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
+            <h3 class="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider mb-4">Your Instructor</h3>
+            <div class="flex items-center gap-3.5 mb-4">
+              <div class="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-emerald-500 p-0.5 shrink-0">
+                <img src={course.instructor.avatar} alt={course.instructor.name} class="w-full h-full object-cover rounded-full" />
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-base">{course.instructor.name}</h4>
+                <p class="text-xs text-slate-500 leading-snug">{course.instructor.role}</p>
+              </div>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed mb-4">
+              {course.instructor.bio}
+            </p>
+            <div class="pt-3 border-t border-slate-100 flex items-center gap-2">
+              <a href="/company-profile" class="text-xs font-bold text-emerald-700 hover:underline">
+                View Full Executive Profile & Experience →
+              </a>
+            </div>
+          </div>
+
+          <!-- Enterprise Inquiries -->
+          <div class="bg-[#112649] text-white rounded-2xl p-6 shadow-sm border border-[#1d3d75]">
+            <h3 class="text-base font-bold mb-2">Team & Enterprise Licensing</h3>
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              Purchasing for 5 or more team members? Get customized corporate invoicing, GST invoices, and dedicated live Q&A cohorts.
+            </p>
+            <button 
+              type="button" 
+              data-service={`Enterprise Training: ${course.title}`}
+              class="open-inquiry-modal-btn w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer text-center"
+            >
+              Request Corporate Invoice
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,228 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { COURSES } from '../lib/courses-data';
+---
+
+<BaseLayout 
+  title="Student Learning Portal — RKMIDIGILABS Academy" 
+  description="Manage your enrolled AI Governance and GRC courses, watch video tutorials, and track progress."
+>
+  <div class="min-h-screen bg-slate-50 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      
+      <!-- Top Dashboard Header -->
+      <div class="bg-gradient-to-r from-[#112649] to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xl font-mono shrink-0">
+            <span id="student-initial">S</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300">
+                STUDENT MEMBER
+              </span>
+              <span id="auth-provider-badge" class="text-[10px] font-mono text-slate-400">
+                Supabase Verified
+              </span>
+            </div>
+            <h1 id="student-name" class="text-2xl font-black text-white mt-1">
+              Student Dashboard
+            </h1>
+            <p id="student-email" class="text-xs text-slate-300 font-mono">
+              Loading student profile...
+            </p>
+          </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-3 shrink-0">
+          <a 
+            href="/courses" 
+            class="px-4 py-2.5 rounded-xl font-bold text-xs bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors"
+          >
+            Explore Masterclasses
+          </a>
+          <button 
+            id="logout-btn" 
+            class="px-4 py-2.5 rounded-xl font-bold text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-colors cursor-pointer"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Enrolled Courses</div>
+          <div id="stat-enrolled" class="text-3xl font-black text-slate-900 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Lifetime access active</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Completed Lessons</div>
+          <div id="stat-completed" class="text-3xl font-black text-emerald-600 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Across all masterclasses</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Certificates Earned</div>
+          <div class="text-3xl font-black text-slate-900 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Issued upon course completion</div>
+        </div>
+      </div>
+
+      <!-- My Enrolled Courses Section -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-black text-slate-900 tracking-tight">My Active Courses</h2>
+          <a href="/courses" class="text-xs font-bold text-emerald-700 hover:underline">
+            Browse All Masterclasses →
+          </a>
+        </div>
+
+        <div id="enrolled-courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Populated by JavaScript based on user enrollments -->
+          <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-500 space-y-3">
+            <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <h3 class="font-bold text-slate-800 text-base">No active course enrollments yet</h3>
+            <p class="text-xs text-slate-400 max-w-md mx-auto">
+              You haven't enrolled in any masterclasses yet. Explore our course catalog to watch free previews and get lifetime access.
+            </p>
+            <div class="pt-2">
+              <a 
+                href="/courses" 
+                class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-xs bg-[#16A34A] hover:bg-[#15803D] text-white transition-colors shadow-sm"
+              >
+                Browse Course Catalog
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script define:vars={{ allCourses: COURSES }}>
+    import { supabase } from '../lib/supabase';
+
+    const nameEl = document.getElementById('student-name');
+    const emailEl = document.getElementById('student-email');
+    const initialEl = document.getElementById('student-initial');
+    const logoutBtn = document.getElementById('logout-btn');
+    const enrolledGrid = document.getElementById('enrolled-courses-grid');
+    const statEnrolled = document.getElementById('stat-enrolled');
+    const statCompleted = document.getElementById('stat-completed');
+
+    // Check user authentication
+    async function loadDashboard() {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Not logged in -> redirect to login
+        window.location.href = '/login?redirect=/dashboard';
+        return;
+      }
+
+      const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student';
+      if (nameEl) nameEl.textContent = fullName;
+      if (emailEl) emailEl.textContent = user.email || '';
+      if (initialEl) initialEl.textContent = fullName.charAt(0).toUpperCase();
+
+      // Check enrolled courses (local + database)
+      let enrolledIds = JSON.parse(localStorage.getItem('rkmidigi_enrolled_courses') || '[]');
+      
+      // Also query Supabase enrollments table
+      try {
+        const { data, error } = await supabase
+          .from('enrollments')
+          .select('course_id')
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+        
+        if (data && data.length > 0) {
+          data.forEach(row => {
+            if (!enrolledIds.includes(row.course_id)) enrolledIds.push(row.course_id);
+          });
+          localStorage.setItem('rkmidigi_enrolled_courses', JSON.stringify(enrolledIds));
+        }
+      } catch (e) {}
+
+      // Calculate total completed lessons
+      let totalCompleted = 0;
+      allCourses.forEach(c => {
+        const prog = JSON.parse(localStorage.getItem(`rkmidigi_progress_${c.id}`) || '[]');
+        totalCompleted += prog.length;
+      });
+      if (statCompleted) statCompleted.textContent = totalCompleted.toString();
+      if (statEnrolled) statEnrolled.textContent = enrolledIds.length.toString();
+
+      // Render enrolled course cards
+      if (enrolledIds.length > 0 && enrolledGrid) {
+        const matchingCourses = allCourses.filter(c => enrolledIds.includes(c.id));
+        if (matchingCourses.length > 0) {
+          enrolledGrid.innerHTML = matchingCourses.map(course => {
+            const prog = JSON.parse(localStorage.getItem(`rkmidigi_progress_${course.id}`) || '[]');
+            const pct = Math.round((prog.length / course.totalLessons) * 100);
+
+            return `
+              <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div class="p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800">
+                      ${course.category}
+                    </span>
+                    <span class="text-[10px] font-mono text-slate-400">
+                      ${course.durationHours}
+                    </span>
+                  </div>
+
+                  <h3 class="font-bold text-slate-900 text-base leading-snug">
+                    <a href="/courses/${course.slug}/learn" class="hover:text-emerald-700 transition-colors">
+                      ${course.title}
+                    </a>
+                  </h3>
+                  <p class="text-xs text-slate-500 mt-1 line-clamp-2">
+                    ${course.subtitle}
+                  </p>
+
+                  <div class="mt-4 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between text-xs font-mono text-slate-500 mb-1.5">
+                      <span>Progress</span>
+                      <span class="font-bold text-emerald-700">${pct}% (${prog.length}/${course.totalLessons} lessons)</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                      <div class="h-full bg-emerald-500 rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                  <span class="text-xs font-mono text-emerald-700 font-bold">✓ Enrolled</span>
+                  <a 
+                    href="/courses/${course.slug}/learn"
+                    class="px-4 py-2 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs transition-colors shadow-xs"
+                  >
+                    Resume Learning →
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    // Logout Handler
+    logoutBtn?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      localStorage.removeItem('rkmidigi_student_auth');
+      window.location.href = '/';
+    });
+
+    loadDashboard();
+  </script>
+</BaseLayout>

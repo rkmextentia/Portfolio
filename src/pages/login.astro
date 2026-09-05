@@ -1,0 +1,138 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="Student Login — RKMIDIGILABS Academy" 
+  description="Log into your student portal to resume video masterclasses and download templates."
+>
+  <div class="min-h-[calc(100vh-160px)] bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl space-y-6">
+      
+      <!-- Brand & Header -->
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-xl overflow-hidden bg-white p-0.5 shadow-sm mx-auto border border-slate-300">
+          <img src="/images/rkmidigilabs-logo.jpg" alt="RKMIDIGILABS Logo" class="w-full h-full object-contain" />
+        </div>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">Student Portal Login</h1>
+        <p class="text-xs text-slate-500">Access your enrolled masterclasses, video tutorials, and certification resources.</p>
+      </div>
+
+      <!-- Alert Box -->
+      <div id="auth-alert" class="hidden p-3.5 rounded-xl text-xs font-bold"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-4 text-xs">
+        <div>
+          <label for="login-email" class="block font-bold text-slate-700 mb-1">Email Address</label>
+          <input 
+            type="email" 
+            id="login-email" 
+            required 
+            placeholder="you@company.com" 
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-slate-900"
+          />
+        </div>
+
+        <div>
+          <label for="login-password" class="block font-bold text-slate-700 mb-1">Password</label>
+          <input 
+            type="password" 
+            id="login-password" 
+            required 
+            placeholder="••••••••" 
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-slate-900"
+          />
+        </div>
+
+        <button 
+          type="submit" 
+          id="submit-btn"
+          class="w-full py-3 px-4 rounded-xl font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] text-white transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer mt-2"
+        >
+          <span>Sign In to Academy</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </form>
+
+      <!-- Footer Links -->
+      <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-500 space-y-2">
+        <p>Don't have an account yet? <a href="/register" class="font-bold text-emerald-700 hover:underline">Register here</a></p>
+        <div class="flex items-center justify-center gap-4 text-[11px] text-slate-400 pt-1 font-mono">
+          <a href="/courses" class="hover:underline">Course Catalog</a>
+          <span>•</span>
+          <a href="/admin/login" class="hover:underline text-slate-500">Admin Studio 🔒</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    const form = document.getElementById('login-form') as HTMLFormElement;
+    const alertEl = document.getElementById('auth-alert');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function showAlert(msg: string, isError = true) {
+      if (!alertEl) return;
+      alertEl.textContent = msg;
+      alertEl.className = `p-3.5 rounded-xl text-xs font-bold ${
+        isError ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+      }`;
+      alertEl.classList.remove('hidden');
+    }
+
+    // Auto-redirect if already logged in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect') || '/dashboard';
+        window.location.href = redirect;
+      }
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('login-email') as HTMLInputElement;
+      const passInput = document.getElementById('login-password') as HTMLInputElement;
+
+      const email = emailInput.value.trim();
+      const password = passInput.value;
+
+      if (!email || !password) return;
+
+      if (submitBtn) {
+        submitBtn.setAttribute('disabled', 'true');
+        submitBtn.innerHTML = '<span>Verifying Credentials...</span>';
+      }
+      if (alertEl) alertEl.classList.add('hidden');
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          showAlert(error.message, true);
+        } else if (data.user) {
+          showAlert('Login successful! Redirecting...', false);
+          const params = new URLSearchParams(window.location.search);
+          const redirect = params.get('redirect') || '/dashboard';
+          setTimeout(() => {
+            window.location.href = redirect;
+          }, 800);
+        }
+      } catch (err: any) {
+        showAlert(err.message || 'Login failed. Please check network connection.', true);
+      } finally {
+        if (submitBtn) {
+          submitBtn.removeAttribute('disabled');
+          submitBtn.innerHTML = '<span>Sign In to Academy</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+        }
+      }
+    });
+  </script>
+</BaseLayout>
