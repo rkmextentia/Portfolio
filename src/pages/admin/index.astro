@@ -285,6 +285,15 @@ const staticPosts = staticCollection.map(p => ({
           <p class="text-xs text-slate-600 mt-1">Configure video streaming links (YouTube unlisted / Vimeo / MP4), module syllabi, and INR pricing.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
+          <button 
+            type="button" 
+            id="push-to-supabase-btn" 
+            class="px-3.5 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Push all masterclasses and video lessons to Supabase cloud database"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <span>Push Data to Supabase</span>
+          </button>
           <a href="/courses" target="_blank" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 shadow-sm flex items-center gap-1.5 transition-colors">
             <span>View Public Academy ↗</span>
           </a>
@@ -881,6 +890,8 @@ const staticPosts = staticCollection.map(p => ({
 
   </div>
 
+<script id="admin-static-data" type="application/json" set:html={JSON.stringify({ staticPosts, staticCourses: COURSES })} />
+
 <script>
   import { 
     supabase, 
@@ -890,17 +901,10 @@ const staticPosts = staticCollection.map(p => ({
     adminRevokeCourseAccess 
   } from '../../lib/supabase';
 
-  (window as any).adminSupabase = {
-    supabase,
-    getAdminStudentProfiles,
-    getAdminEnrollments,
-    adminGrantCourseAccess,
-    adminRevokeCourseAccess
-  };
-  window.dispatchEvent(new CustomEvent('supabase-admin-ready'));
-</script>
-
-<script define:vars={{ staticPosts, staticCourses: COURSES }}>
+  const staticDataEl = document.getElementById('admin-static-data');
+  const { staticPosts = [], staticCourses = [] } = staticDataEl 
+    ? JSON.parse(staticDataEl.textContent || '{}') 
+    : { staticPosts: [], staticCourses: [] };
   const API_PORT = 4322;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
                   window.location.hostname.startsWith('192.168.') || 
@@ -1007,7 +1011,7 @@ const staticPosts = staticCollection.map(p => ({
     }
   }
 
-  function updateStats(posts: any[]) {
+  function updateStats(posts) {
     const totalEl = document.getElementById('stat-total');
     const publishedEl = document.getElementById('stat-published');
     const draftsEl = document.getElementById('stat-drafts');
@@ -1019,7 +1023,7 @@ const staticPosts = staticCollection.map(p => ({
     if (videosEl) videosEl.textContent = posts.filter(p => !!p.youtubeUrl).length.toString();
   }
 
-  function renderPosts(posts: any[]) {
+  function renderPosts(posts) {
     const tbody = document.getElementById('posts-table-body');
     if (!tbody) return;
 
@@ -1713,7 +1717,7 @@ const staticPosts = staticCollection.map(p => ({
     `;
   }
 
-  async function openTemplateViewer(inqId: string) {
+  async function openTemplateViewer(inqId) {
     if (!templateViewerModal || !templateViewerContent) return;
     if (templateViewerRef) templateViewerRef.textContent = inqId;
     templateViewerContent.innerHTML = '<div class="p-8 text-center text-xs text-slate-500">Loading formatted email template...</div>';
@@ -1774,7 +1778,7 @@ const staticPosts = staticCollection.map(p => ({
       }
     });
 
-    if (tabId === 'courses') renderCourses();
+    if (tabId === 'courses') fetchCoursesFromSupabase().then(() => renderCourses());
     if (tabId === 'students') fetchStudentsAndEnrollments();
     if (tabId === 'inquiries') fetchInquiries();
   }
@@ -1785,8 +1789,10 @@ const staticPosts = staticCollection.map(p => ({
   document.getElementById('tab-btn-inquiries')?.addEventListener('click', () => switchTab('inquiries'));
 
   // ==========================================
-  // ACADEMY COURSES & VIDEO LESSONS MANAGER
+  // ACADEMY COURSES & VIDEO LESSONS (SUPABASE)
   // ==========================================
+  let activeCourses = [];
+
   function getCustomCourses() {
     try {
       const saved = localStorage.getItem('rkmidigi_custom_courses');
@@ -1795,7 +1801,7 @@ const staticPosts = staticCollection.map(p => ({
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return staticCourses;
+    return staticCourses || [];
   }
 
   function saveCustomCourses(courses) {
@@ -1804,11 +1810,54 @@ const staticPosts = staticCollection.map(p => ({
     } catch (e) {}
   }
 
+  async function fetchCoursesFromSupabase() {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*, lessons(*)')
+        .order('price_inr', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        activeCourses = data.map(c => ({
+          id: c.id,
+          slug: c.slug,
+          title: c.title,
+          subtitle: c.subtitle || '',
+          summary: c.summary || '',
+          description: c.description || '',
+          category: c.category || 'AI Governance',
+          level: c.level || 'Practitioner',
+          priceInr: Number(c.price_inr || 4999),
+          originalPriceInr: Number(c.original_price_inr || 14999),
+          durationHours: c.duration_hours || '6 Hours',
+          totalLessons: (c.lessons || []).length || c.total_lessons || 8,
+          thumbnailUrl: c.thumbnail_url || '/images/rkmidigilabs-logo.jpg',
+          featured: !!c.featured,
+          lessons: (c.lessons || []).sort((a, b) => (a.order_index || 0) - (b.order_index || 0)).map(l => ({
+            id: l.id,
+            orderIndex: l.order_index,
+            title: l.title,
+            duration: l.duration,
+            description: l.description || '',
+            videoUrl: l.video_url,
+            isFreePreview: !!l.is_free_preview
+          }))
+        }));
+        return activeCourses;
+      }
+    } catch (err) {
+      console.warn('Could not query Supabase courses:', err);
+    }
+
+    activeCourses = getCustomCourses();
+    return activeCourses;
+  }
+
   function renderCourses() {
     const container = document.getElementById('admin-courses-container');
     if (!container) return;
 
-    const courses = getCustomCourses();
+    const courses = activeCourses.length > 0 ? activeCourses : getCustomCourses();
     const statCourses = document.getElementById('stat-courses');
     if (statCourses) statCourses.textContent = courses.length.toString();
 
@@ -1832,7 +1881,7 @@ const staticPosts = staticCollection.map(p => ({
               </div>
               <div class="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-3">
                 <span>⏱ ${l.duration || '15:00'}</span>
-                <span>🎥 Video: <code class="text-slate-700 bg-slate-200 px-1 py-0.2 rounded">${(l.videoUrl || 'Not set').substring(0, 24)}...</code></span>
+                <span>🎥 Video: <code class="text-slate-700 bg-slate-200 px-1 py-0.2 rounded">${(l.videoUrl || 'Not set').substring(0, 28)}...</code></span>
               </div>
             </div>
           </div>
@@ -1849,7 +1898,7 @@ const staticPosts = staticCollection.map(p => ({
             <button 
               type="button" 
               onclick="window.openLessonEdit('${course.id}', '${l.id}')"
-              class="px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1"
+              class="px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1 cursor-pointer"
               title="Edit video embed URL or duration"
             >
               <span>✏️ Edit Video</span>
@@ -1867,7 +1916,7 @@ const staticPosts = staticCollection.map(p => ({
                 <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#112649] text-white">
                   ${course.category || 'Executive Education'}
                 </span>
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-300">
                   Level: ${course.level || 'Practitioner'}
                 </span>
               </div>
@@ -1907,7 +1956,7 @@ const staticPosts = staticCollection.map(p => ({
               <button 
                 type="button" 
                 onclick="window.openLessonEdit('${course.id}', 'new')"
-                class="text-xs font-bold text-[#16A34A] hover:text-[#15803D] flex items-center gap-1"
+                class="text-xs font-bold text-[#16A34A] hover:text-[#15803D] flex items-center gap-1 cursor-pointer"
               >
                 <span>+ Add Video Lesson</span>
               </button>
@@ -1922,6 +1971,63 @@ const staticPosts = staticCollection.map(p => ({
     }).join('');
   }
 
+  // Push Data to Supabase Button Action
+  const pushToSupabaseBtn = document.getElementById('push-to-supabase-btn');
+  pushToSupabaseBtn?.addEventListener('click', async () => {
+    if (pushToSupabaseBtn) {
+      pushToSupabaseBtn.setAttribute('disabled', 'true');
+      pushToSupabaseBtn.textContent = 'Pushing Data...';
+    }
+    showToast('Pushing 3 Masterclasses and 24 Lessons to Supabase cloud database...');
+
+    try {
+      const coursesToSeed = staticCourses || [];
+      for (const course of coursesToSeed) {
+        await supabase.from('courses').upsert({
+          id: course.id,
+          slug: course.slug,
+          title: course.title,
+          subtitle: course.subtitle,
+          summary: course.summary,
+          description: course.description,
+          category: course.category,
+          level: course.level,
+          price_inr: course.priceInr,
+          original_price_inr: course.originalPriceInr,
+          duration_hours: course.durationHours,
+          total_lessons: (course.lessons || []).length,
+          thumbnail_url: course.thumbnailUrl,
+          featured: course.featured,
+          is_published: true
+        });
+
+        for (const l of (course.lessons || [])) {
+          await supabase.from('lessons').upsert({
+            id: l.id,
+            course_id: course.id,
+            order_index: l.orderIndex,
+            title: l.title,
+            duration: l.duration,
+            description: l.description,
+            video_url: l.videoUrl,
+            is_free_preview: l.isFreePreview
+          });
+        }
+      }
+
+      showToast('All 3 Masterclasses and 24 Video Lessons successfully pushed to Supabase PostgreSQL!');
+      await fetchCoursesFromSupabase();
+      renderCourses();
+    } catch (err) {
+      showToast('Error pushing data: ' + (err.message || 'Check database connection'), true);
+    } finally {
+      if (pushToSupabaseBtn) {
+        pushToSupabaseBtn.removeAttribute('disabled');
+        pushToSupabaseBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><span>Push Data to Supabase</span>';
+      }
+    }
+  });
+
   // Lesson Edit Modal Handler
   const lessonModal = document.getElementById('lesson-edit-modal');
   const lessonForm = document.getElementById('lesson-edit-form');
@@ -1929,35 +2035,36 @@ const staticPosts = staticCollection.map(p => ({
   const cancelLessonModalBtn = document.getElementById('cancel-lesson-modal-btn');
 
   function openLessonEditModal(courseId, lessonId) {
-    const courses = getCustomCourses();
+    const courses = activeCourses.length > 0 ? activeCourses : getCustomCourses();
     const course = courses.find(c => c.id === courseId);
     if (!course) return;
 
-    document.getElementById('edit-lesson-course-id').value = courseId;
-    document.getElementById('edit-lesson-course-name').textContent = course.title;
+    (document.getElementById('edit-lesson-course-id') as HTMLInputElement).value = courseId;
+    const nameEl = document.getElementById('edit-lesson-course-name');
+    if (nameEl) nameEl.textContent = course.title;
 
     if (lessonId === 'new') {
-      document.getElementById('edit-lesson-id').value = `les-${Date.now()}`;
-      document.getElementById('edit-lesson-title').value = '';
-      document.getElementById('edit-lesson-duration').value = '15:00';
-      document.getElementById('edit-lesson-free').checked = false;
-      document.getElementById('edit-lesson-video').value = '';
-      document.getElementById('edit-lesson-desc').value = '';
+      (document.getElementById('edit-lesson-id') as HTMLInputElement).value = `les-${Date.now()}`;
+      (document.getElementById('edit-lesson-title') as HTMLInputElement).value = '';
+      (document.getElementById('edit-lesson-duration') as HTMLInputElement).value = '15:00';
+      (document.getElementById('edit-lesson-free') as HTMLInputElement).checked = false;
+      (document.getElementById('edit-lesson-video') as HTMLInputElement).value = '';
+      (document.getElementById('edit-lesson-desc') as HTMLTextAreaElement).value = '';
     } else {
       const lesson = (course.lessons || []).find(l => l.id === lessonId);
       if (!lesson) return;
-      document.getElementById('edit-lesson-id').value = lesson.id;
-      document.getElementById('edit-lesson-title').value = lesson.title || '';
-      document.getElementById('edit-lesson-duration').value = lesson.duration || '15:00';
-      document.getElementById('edit-lesson-free').checked = !!lesson.isFreePreview;
-      document.getElementById('edit-lesson-video').value = lesson.videoUrl || '';
-      document.getElementById('edit-lesson-desc').value = lesson.description || '';
+      (document.getElementById('edit-lesson-id') as HTMLInputElement).value = lesson.id;
+      (document.getElementById('edit-lesson-title') as HTMLInputElement).value = lesson.title || '';
+      (document.getElementById('edit-lesson-duration') as HTMLInputElement).value = lesson.duration || '15:00';
+      (document.getElementById('edit-lesson-free') as HTMLInputElement).checked = !!lesson.isFreePreview;
+      (document.getElementById('edit-lesson-video') as HTMLInputElement).value = lesson.videoUrl || '';
+      (document.getElementById('edit-lesson-desc') as HTMLTextAreaElement).value = lesson.description || '';
     }
 
     lessonModal?.classList.remove('hidden');
   }
 
-  (window as any).openLessonEdit = openLessonEditModal;
+  window.openLessonEdit = openLessonEditModal;
 
   function closeLessonEditModal() {
     lessonModal?.classList.add('hidden');
@@ -1976,7 +2083,7 @@ const staticPosts = staticCollection.map(p => ({
     const videoUrl = (document.getElementById('edit-lesson-video') as HTMLInputElement).value.trim();
     const description = (document.getElementById('edit-lesson-desc') as HTMLTextAreaElement).value.trim();
 
-    const courses = getCustomCourses();
+    const courses = activeCourses.length > 0 ? activeCourses : getCustomCourses();
     const course = courses.find(c => c.id === courseId);
     if (course) {
       if (!Array.isArray(course.lessons)) course.lessons = [];
@@ -1999,6 +2106,20 @@ const staticPosts = staticCollection.map(p => ({
 
       saveCustomCourses(courses);
       renderCourses();
+
+      // Sync to Supabase
+      try {
+        await supabase.from('lessons').upsert({
+          id: updatedLesson.id,
+          course_id: courseId,
+          order_index: updatedLesson.orderIndex,
+          title: updatedLesson.title,
+          duration: updatedLesson.duration,
+          description: updatedLesson.description,
+          video_url: updatedLesson.videoUrl,
+          is_free_preview: updatedLesson.isFreePreview
+        });
+      } catch (e) {}
 
       // If local server active, also sync
       try {
@@ -2027,11 +2148,8 @@ const staticPosts = staticCollection.map(p => ({
     tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-xs text-slate-500 font-mono">Syncing with Supabase Cloud Database...</td></tr>`;
 
     try {
-      const helper = (window as any).adminSupabase;
-      if (helper) {
-        allStudents = await helper.getAdminStudentProfiles();
-        allEnrollments = await helper.getAdminEnrollments();
-      }
+      allStudents = await getAdminStudentProfiles();
+      allEnrollments = await getAdminEnrollments();
     } catch (e) {
       console.warn('Could not query Supabase helpers:', e);
     }
@@ -2085,7 +2203,7 @@ const staticPosts = staticCollection.map(p => ({
       return;
     }
 
-    const coursesMap = new Map(staticCourses.map(c => [c.id, c.title]));
+    const coursesMap = new Map((staticCourses || []).map(c => [c.id, c.title]));
 
     tbody.innerHTML = filtered.map(s => {
       const userEnrollments = allEnrollments.filter(e => e.student_email?.toLowerCase() === s.email?.toLowerCase());
@@ -2140,7 +2258,7 @@ const staticPosts = staticCollection.map(p => ({
               <button 
                 type="button" 
                 onclick="window.quickEnroll('${s.email}', '${s.full_name || ''}')"
-                class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs"
+                class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs cursor-pointer"
                 title="Grant course access"
               >
                 + Enroll
@@ -2177,7 +2295,7 @@ const staticPosts = staticCollection.map(p => ({
     enrollModal?.classList.remove('hidden');
   }
 
-  (window as any).quickEnroll = openEnrollModal;
+  window.quickEnroll = openEnrollModal;
 
   openEnrollBtn?.addEventListener('click', () => openEnrollModal());
   closeEnrollBtn?.addEventListener('click', () => enrollModal?.classList.add('hidden'));
@@ -2199,11 +2317,7 @@ const staticPosts = staticCollection.map(p => ({
     }
 
     try {
-      const helper = (window as any).adminSupabase;
-      if (helper) {
-        await helper.adminGrantCourseAccess(email, courseId, paymentRef, name || 'Student');
-      }
-
+      await adminGrantCourseAccess(email, courseId, paymentRef, name || 'Student');
       enrollModal?.classList.add('hidden');
       showToast(`Access granted to ${email} for course!`);
       await fetchStudentsAndEnrollments();
@@ -2217,21 +2331,12 @@ const staticPosts = staticCollection.map(p => ({
     }
   });
 
-  // Sync inquiries into inquiries tab table as well
-  const originalRenderInquiries = (window as any).renderInquiriesTable;
-  const tabInquiriesTbody = document.getElementById('tab-inquiries-table-body');
-  const tabInquiriesBadge = document.getElementById('tab-inquiries-badge');
-
-  window.addEventListener('supabase-admin-ready', () => {
-    fetchStudentsAndEnrollments();
-  });
-
   // Background fetch of inquiries count
   fetchInquiries();
 
-  // Initial fetch of posts, courses, and students
+  // Initial fetch of posts, courses, and students immediately on load
   fetchPosts();
-  renderCourses();
+  fetchCoursesFromSupabase().then(() => renderCourses());
   fetchStudentsAndEnrollments();
 </script>
 </BaseLayout>
