@@ -14,6 +14,9 @@ const socialConfigFile = path.join(dataDir, 'social-config.json');
 const socialBroadcastsFile = path.join(dataDir, 'social-broadcasts.json');
 const inquiriesDir = path.join(dataDir, 'inquiries');
 const inquiriesFile = path.join(dataDir, 'inquiries.json');
+const coursesFile = path.join(dataDir, 'courses.json');
+const studentsFile = path.join(dataDir, 'students.json');
+const enrollmentsFile = path.join(dataDir, 'enrollments.json');
 
 // Simple .env parser
 function loadEnv() {
@@ -855,6 +858,108 @@ const server = http.createServer((req, res) => {
     } else {
       return sendJson(res, 404, { success: false, error: `Inquiry ${inqId} template not found` });
     }
+  }
+
+  // 15. List academy courses
+  if (pathname === '/api/admin/courses' && req.method === 'GET') {
+    try {
+      if (fs.existsSync(coursesFile)) {
+        const courses = JSON.parse(fs.readFileSync(coursesFile, 'utf-8'));
+        return sendJson(res, 200, { success: true, count: courses.length, courses });
+      }
+      return sendJson(res, 200, { success: true, count: 0, courses: [] });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err.message });
+    }
+  }
+
+  // 16. Update or Add Course Lesson Video
+  if (pathname === '/api/admin/courses/lessons' && req.method === 'POST') {
+    return readBody((err, data) => {
+      if (err) return sendJson(res, 400, { success: false, error: 'Invalid JSON payload' });
+      const { courseId, lesson } = data || {};
+      if (!courseId || !lesson) {
+        return sendJson(res, 400, { success: false, error: 'courseId and lesson object are required' });
+      }
+      try {
+        let courses = [];
+        if (fs.existsSync(coursesFile)) {
+          courses = JSON.parse(fs.readFileSync(coursesFile, 'utf-8'));
+        }
+        let targetCourse = courses.find(c => c.id === courseId);
+        if (!targetCourse) {
+          targetCourse = { id: courseId, lessons: [] };
+          courses.push(targetCourse);
+        }
+        if (!Array.isArray(targetCourse.lessons)) targetCourse.lessons = [];
+        
+        const existingIdx = targetCourse.lessons.findIndex(l => l.id === lesson.id);
+        if (existingIdx >= 0) {
+          targetCourse.lessons[existingIdx] = { ...targetCourse.lessons[existingIdx], ...lesson };
+        } else {
+          targetCourse.lessons.push(lesson);
+        }
+
+        fs.writeFileSync(coursesFile, JSON.stringify(courses, null, 2), 'utf-8');
+        return sendJson(res, 200, { success: true, message: 'Lesson updated successfully', lesson });
+      } catch (e) {
+        return sendJson(res, 500, { success: false, error: e.message });
+      }
+    });
+  }
+
+  // 17. List students and enrollments
+  if (pathname === '/api/admin/students' && req.method === 'GET') {
+    try {
+      const students = fs.existsSync(studentsFile) ? JSON.parse(fs.readFileSync(studentsFile, 'utf-8')) : [];
+      const enrollments = fs.existsSync(enrollmentsFile) ? JSON.parse(fs.readFileSync(enrollmentsFile, 'utf-8')) : [];
+      return sendJson(res, 200, { success: true, students, enrollments });
+    } catch (err) {
+      return sendJson(res, 500, { success: false, error: err.message });
+    }
+  }
+
+  // 18. Manually enroll student in course
+  if (pathname === '/api/admin/enroll' && req.method === 'POST') {
+    return readBody((err, data) => {
+      if (err) return sendJson(res, 400, { success: false, error: 'Invalid JSON payload' });
+      const { email, courseId, paymentRef, studentName } = data || {};
+      if (!email || !courseId) {
+        return sendJson(res, 400, { success: false, error: 'email and courseId are required' });
+      }
+      try {
+        let enrollments = fs.existsSync(enrollmentsFile) ? JSON.parse(fs.readFileSync(enrollmentsFile, 'utf-8')) : [];
+        const record = {
+          id: `enr-${Date.now()}`,
+          student_email: email.trim().toLowerCase(),
+          student_name: studentName || 'Enrolled Student',
+          course_id: courseId,
+          payment_id: paymentRef || 'MANUAL-UPI',
+          status: 'active',
+          created_at: new Date().toISOString()
+        };
+        enrollments.unshift(record);
+        fs.writeFileSync(enrollmentsFile, JSON.stringify(enrollments, null, 2), 'utf-8');
+
+        // Ensure student profile exists
+        let students = fs.existsSync(studentsFile) ? JSON.parse(fs.readFileSync(studentsFile, 'utf-8')) : [];
+        const exists = students.find(s => s.email === record.student_email);
+        if (!exists) {
+          students.push({
+            id: `usr-${Date.now()}`,
+            email: record.student_email,
+            full_name: record.student_name,
+            role: 'student',
+            created_at: new Date().toISOString()
+          });
+          fs.writeFileSync(studentsFile, JSON.stringify(students, null, 2), 'utf-8');
+        }
+
+        return sendJson(res, 200, { success: true, message: 'Student enrolled successfully', enrollment: record });
+      } catch (e) {
+        return sendJson(res, 500, { success: false, error: e.message });
+      }
+    });
   }
 
   // 404 Not Found
