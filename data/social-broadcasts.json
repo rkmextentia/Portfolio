@@ -1,5 +1,19 @@
 [
   {
+    "id": "broadcast-1788617935951",
+    "timestamp": "2026-09-05T14:18:55.951Z",
+    "title": "EU AI Act Article 50 Transparency and Watermarking",
+    "url": "http://localhost:4321/blog/eu-ai-act-article-50-transparency-and-watermarking",
+    "brochureUrl": "http://localhost:4321/company-profile",
+    "platforms": [
+      "linkedin",
+      "twitter",
+      "facebook",
+      "whatsapp"
+    ],
+    "webhookStatus": "skipped"
+  },
+  {
     "id": "broadcast-1788617810644",
     "timestamp": "2026-09-05T14:16:50.644Z",
     "title": "ISO/IEC 42001: The New Benchmark for AI Management Systems (AIMS)",

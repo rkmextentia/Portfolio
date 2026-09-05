@@ -11,13 +11,6 @@ readTime: "4 min read"
 author: "RKMIDIGILABS"
 ---
 
-
-
-
-
-
-
-
 ### Executive Summary
 
 A detailed breakdown of Article 50 transparency requirements for AI-generated synthetic content, deepfakes, and text.
