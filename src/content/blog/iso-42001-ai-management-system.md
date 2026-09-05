@@ -1,34 +1,18 @@
 ---
-title: ""
-date: 2026-09-05
-category: "AI Governance"
-tags: ["AI Governance","Compliance"]
-summary: ""
+title: "ISO/IEC 42001: The New Benchmark for AI Management Systems (AIMS)"
+date: 2026-09-03
+category: "Enterprise GRC"
+tags: ["ISO 42001","ISO 27001","AIMS","Audit Readiness","GRC Strategy"]
+youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+summary: "How ISO/IEC 42001 bridges the gap between ISO 27001 information security and modern artificial intelligence governance."
 featured: false
 published: true
-readTime: "4 min read"
+readTime: "6 min read"
 author: "RKMIDIGILABS"
 ---
 
 
 
-
-
-
-
-
-
-
-﻿---
-title: "ISO/IEC 42001: The New Benchmark for AI Management Systems (AIMS)"
-date: 2026-09-03
-category: "Enterprise GRC"
-tags: ["ISO 42001", "ISO 27001", "AIMS", "Audit Readiness", "GRC Strategy"]
-youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-summary: "How ISO/IEC 42001 bridges the gap between ISO 27001 information security and modern artificial intelligence governance."
-featured: false
-readTime: "6 min read"
----
 
 ### Why ISO 27001 Alone Is Not Enough for AI
 

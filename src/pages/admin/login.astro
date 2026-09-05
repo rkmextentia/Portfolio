@@ -79,17 +79,25 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <script>
   const API_PORT = 4322;
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? `http://${window.location.hostname}:${API_PORT}` 
+  const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
+                  window.location.hostname.startsWith('192.168.') || 
+                  window.location.hostname.startsWith('10.') || 
+                  window.location.hostname.endsWith('.local');
+  const API_BASE = isLocal 
+    ? `${window.location.protocol}//${window.location.hostname}:${API_PORT}` 
     : window.location.origin;
 
   // Show logged out notice if redirected
   if (new URLSearchParams(window.location.search).get('logged_out')) {
+    localStorage.removeItem('rkmidigi_admin_token');
+    localStorage.removeItem('rkmidigi_admin_user');
+    sessionStorage.removeItem('rkmidigi_admin_token');
+    sessionStorage.removeItem('rkmidigi_admin_user');
     const loAlert = document.getElementById('logged-out-alert');
     if (loAlert) loAlert.classList.remove('hidden');
   } else {
     // Auto redirect if already authenticated
-    const existingToken = sessionStorage.getItem('rkmidigi_admin_token');
+    const existingToken = localStorage.getItem('rkmidigi_admin_token') || sessionStorage.getItem('rkmidigi_admin_token');
     if (existingToken) {
       window.location.href = '/admin';
     }
@@ -130,6 +138,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
         const data = await res.json();
         if (res.ok && data.success && data.token) {
+          localStorage.setItem('rkmidigi_admin_token', data.token);
+          localStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
           sessionStorage.setItem('rkmidigi_admin_token', data.token);
           sessionStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
           window.location.href = '/admin';

@@ -529,17 +529,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <script>
   const API_PORT = 4322;
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? `http://${window.location.hostname}:${API_PORT}` 
+  const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
+                  window.location.hostname.startsWith('192.168.') || 
+                  window.location.hostname.startsWith('10.') || 
+                  window.location.hostname.endsWith('.local');
+  const API_BASE = isLocal 
+    ? `${window.location.protocol}//${window.location.hostname}:${API_PORT}` 
     : window.location.origin;
 
-  const token = sessionStorage.getItem('rkmidigi_admin_token');
+  const token = localStorage.getItem('rkmidigi_admin_token') || sessionStorage.getItem('rkmidigi_admin_token');
   if (!token) {
     window.location.href = '/admin/login';
   }
 
   // Logout
   function handleLogout() {
+    localStorage.removeItem('rkmidigi_admin_token');
+    localStorage.removeItem('rkmidigi_admin_user');
     sessionStorage.removeItem('rkmidigi_admin_token');
     sessionStorage.removeItem('rkmidigi_admin_user');
     window.location.href = '/admin/login?logged_out=1';

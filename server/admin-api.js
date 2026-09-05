@@ -48,9 +48,10 @@ function verifyAuth(req) {
 }
 
 function parseFrontmatter(fileContent) {
-  const match = fileContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  const cleanContent = (fileContent || '').replace(/^\uFEFF/, '').trimStart();
+  const match = cleanContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) {
-    return { data: {}, body: fileContent };
+    return { data: {}, body: cleanContent };
   }
   const rawYaml = match[1];
   const body = match[2] || '';
