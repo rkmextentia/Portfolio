@@ -1,4 +1,4 @@
-﻿-- ==============================================================================
+-- ==============================================================================
 -- RKMIDIGILABS — Supabase Database Schema for Academy & Video Courses
 -- Run this in your Supabase Project SQL Editor (https://supabase.com/dashboard)
 -- ==============================================================================
@@ -133,3 +133,30 @@ VALUES
   ('iso-42001-mod-7', 'course-iso-42001', 7, 'Internal Audits, Metrics & Management Review (Clause 9)', '38 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
   ('iso-42001-mod-8', 'course-iso-42001', 8, 'Lead Implementer Certification Blueprint & Final Checklist', '42 mins', 'https://www.youtube.com/embed/k238XpMMn38', false)
 ON CONFLICT (id) DO NOTHING;
+
+-- Seed Lessons for EU AI Act
+INSERT INTO public.lessons (id, course_id, order_index, title, duration, video_url, is_free_preview)
+VALUES
+  ('eu-ai-act-mod-1', 'course-eu-ai-act', 1, 'EU AI Act Scope, Jurisdiction & Enforcement Timelines', '25 mins', 'https://www.youtube.com/embed/k238XpMMn38', true),
+  ('eu-ai-act-mod-2', 'course-eu-ai-act', 2, 'Article 50: Synthetic Content, Watermarking & Disclosures', '35 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
+  ('eu-ai-act-mod-3', 'course-eu-ai-act', 3, 'High-Risk AI Systems: Annex III Classification Criteria', '45 mins', 'https://www.youtube.com/embed/k238XpMMn38', false),
+  ('eu-ai-act-mod-4', 'course-eu-ai-act', 4, 'Technical Documentation & System Logging (Article 11 & 12)', '40 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
+  ('eu-ai-act-mod-5', 'course-eu-ai-act', 5, 'Data Governance & Training Data Quality Mandates (Article 10)', '45 mins', 'https://www.youtube.com/embed/k238XpMMn38', false),
+  ('eu-ai-act-mod-6', 'course-eu-ai-act', 6, 'Human Oversight, Cybersecurity & Robustness (Article 14 & 15)', '50 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
+  ('eu-ai-act-mod-7', 'course-eu-ai-act', 7, 'Fundamental Rights Impact Assessments (FRIA) in Practice', '42 mins', 'https://www.youtube.com/embed/k238XpMMn38', false),
+  ('eu-ai-act-mod-8', 'course-eu-ai-act', 8, 'Conformity Assessment Procedures & CE Marking', '40 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
+  ('eu-ai-act-mod-9', 'course-eu-ai-act', 9, 'Enterprise Action Plan & Audit Trail Setup', '35 mins', 'https://www.youtube.com/embed/k238XpMMn38', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Lessons for NIST AI RMF
+INSERT INTO public.lessons (id, course_id, order_index, title, duration, video_url, is_free_preview)
+VALUES
+  ('nist-rmf-mod-1', 'course-nist-ai-rmf', 1, 'NIST AI RMF Core: Architecture & The 4 Functions', '20 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', true),
+  ('nist-rmf-mod-2', 'course-nist-ai-rmf', 2, 'The GOVERN Function: Policy, Culture & Accountability', '35 mins', 'https://www.youtube.com/embed/k238XpMMn38', false),
+  ('nist-rmf-mod-3', 'course-nist-ai-rmf', 3, 'The MAP Function: Contextualizing Risks & Model Profiling', '42 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
+  ('nist-rmf-mod-4', 'course-nist-ai-rmf', 4, 'The MEASURE Function: Evaluating LLMs & Red-Teaming', '50 mins', 'https://www.youtube.com/embed/k238XpMMn38', false),
+  ('nist-rmf-mod-5', 'course-nist-ai-rmf', 5, 'The MANAGE Function: Incident Response & Safeguards', '40 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false),
+  ('nist-rmf-mod-6', 'course-nist-ai-rmf', 6, 'NIST Generative AI Profile (AI 600-1) in Practice', '45 mins', 'https://www.youtube.com/embed/k238XpMMn38', false),
+  ('nist-rmf-mod-7', 'course-nist-ai-rmf', 7, 'Executive Board Reporting & Audit Readiness', '38 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false)
+ON CONFLICT (id) DO NOTHING;
+
