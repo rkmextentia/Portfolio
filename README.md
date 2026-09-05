@@ -41,17 +41,7 @@ npm install
 ```
 
 ### 2. Configure Environment
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
 ```
-Ensure your `.env` contains:
-```env
-ADMIN_SECRET_KEY=rkmidigi2026!
-ADMIN_API_PORT=4322
-SITE_URL=http://localhost:4321
-```
-
 ### 3. Launch Services
 Run both the frontend and the Admin API server:
 
