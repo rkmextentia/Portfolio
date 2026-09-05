@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-primary: #FFFFFF;
+    --color-header-bg: #112649;
+    --color-text-main: #000000;
+    --color-text-body: #1F2937;
+    --color-btn-green: #16A34A;
+    --color-btn-green-hover: #15803D;
+    --color-highlight-grey: #F1F5F9;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: Calibri, 'Carlito', 'Candara', 'Segoe UI', Arial, sans-serif;
+    background-color: #FFFFFF;
+    color: #000000;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    background-color: #FFFFFF;
+    color: #000000;
+    font-family: Calibri, 'Carlito', 'Candara', 'Segoe UI', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6, button, input, select, textarea, p, span, a, div {
+    font-family: Calibri, 'Carlito', 'Candara', 'Segoe UI', Arial, sans-serif;
+  }
+}
+
+/* Crisp high-contrast black typography */
+.prose-executive {
+  color: #1F2937;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  font-family: Calibri, 'Carlito', 'Candara', 'Segoe UI', Arial, sans-serif;
+}
+.prose-executive h1, .prose-executive h2, .prose-executive h3, .prose-executive h4 {
+  color: #000000;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-family: Calibri, 'Carlito', 'Candara', 'Segoe UI', Arial, sans-serif;
+}
+.prose-executive a {
+  color: #15803D;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+.prose-executive a:hover {
+  color: #166534;
+}
+.prose-executive strong {
+  color: #000000;
+  font-weight: 700;
+}
+.prose-executive code {
+  color: #112649;
+  background-color: #F1F5F9;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  border: 1px solid #E2E8F0;
+  font-weight: 600;
+}
+.prose-executive blockquote {
+  border-left: 4px solid #16A34A;
+  color: #374151;
+  font-style: normal;
+  background-color: #F8FAFC;
+  padding: 1rem 1.25rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  margin: 1.5rem 0;
+  border-top: 1px solid #E2E8F0;
+  border-right: 1px solid #E2E8F0;
+  border-bottom: 1px solid #E2E8F0;
+}
+.prose-executive img {
+  border-radius: 0.75rem;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  margin: 2rem auto;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

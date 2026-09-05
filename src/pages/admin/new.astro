@@ -1,0 +1,1070 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="New Post & Video — RKMIDIGILABS Studio" 
+  description="Create and publish new blog articles and YouTube video analyses for RKMIDIGILABS."
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Header with Back Link & Action Buttons -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+      <div class="flex items-center gap-3">
+        <a 
+          href="/admin" 
+          class="p-2 rounded-lg text-slate-500 hover:text-black hover:bg-slate-100 transition-colors"
+          title="Back to Dashboard"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        </a>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-black tracking-tight">Create Article / Video Episode</h1>
+          <p class="text-xs text-slate-500 font-mono">Publish directly to RKMIDIGILABS website</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button 
+          type="button" 
+          id="download-md-btn"
+          class="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 shadow-sm transition-colors flex items-center gap-1.5"
+          title="Download raw .md file backup"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span class="hidden sm:inline">Export .md</span>
+        </button>
+
+        <button 
+          type="button" 
+          id="toggle-publish-btn"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+          title="Toggle between Published and Unpublished (Draft)"
+        >
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Status: Published</span>
+        </button>
+
+        <button 
+          type="button" 
+          id="publish-btn"
+          class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-md transition-all flex items-center gap-1.5"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span>Save Post</span>
+        </button>
+
+        <!-- Profile Button -->
+        <button 
+          type="button" 
+          id="profile-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 border border-slate-300 shadow-sm transition-colors flex items-center gap-1.5 text-slate-800"
+          title="View Administrator Profile & Organization Details"
+        >
+          <span class="w-5 h-5 rounded-full bg-[#112649] text-white flex items-center justify-center text-[10px] font-black">RK</span>
+          <span class="hidden md:inline">Profile</span>
+          <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <!-- Logout Button -->
+        <button 
+          type="button" 
+          id="logout-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-sm transition-colors flex items-center gap-1.5"
+          title="Sign Out of Admin"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <span class="hidden sm:inline">Log Out</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert / Toast Banner -->
+    <div id="editor-toast" class="hidden my-4 p-3 rounded-lg border text-xs font-bold flex items-center justify-between">
+      <span id="toast-text"></span>
+      <button type="button" onclick="document.getElementById('editor-toast').classList.add('hidden')" class="font-black ml-4">✕</button>
+    </div>
+
+    <!-- Main Editor & Live Preview Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
+      
+      <!-- Left Column: Form Controls (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Post Title & Slug -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div>
+            <label for="post-title" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Article Title <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="post-title" 
+              placeholder="e.g. EU AI Act Article 50: Watermarking & Transparency" 
+              required
+              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-bold text-black focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label for="post-slug" class="block text-xs font-mono text-slate-500 mb-1">
+              URL Slug: <span class="text-slate-400 font-normal">/blog/</span><span id="slug-preview" class="text-[#16A34A] font-bold"></span>
+            </label>
+            <input 
+              type="text" 
+              id="post-slug" 
+              placeholder="auto-generated-slug" 
+              class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Category, Date & Featured Settings -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label for="post-category" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Category
+            </label>
+            <select 
+              id="post-category"
+              class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            >
+              <option value="AI Governance">AI Governance</option>
+              <option value="Enterprise GRC">Enterprise GRC</option>
+              <option value="Corporate Training">Corporate Training</option>
+              <option value="Regulatory Alerts">Regulatory Alerts</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="post-readtime" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Read Time
+            </label>
+            <input 
+              type="text" 
+              id="post-readtime" 
+              value="4 min read" 
+              class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono text-slate-700 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            />
+          </div>
+
+          <div class="flex flex-col justify-between">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Homepage Pin
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer pt-1">
+              <input type="checkbox" id="post-featured" class="w-4 h-4 text-[#16A34A] rounded border-slate-300 focus:ring-[#16A34A]" />
+              <span class="text-xs font-bold text-slate-700">Feature on Home</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- YouTube Video URL with Live Preview -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="post-video" class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-red-600 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                <span>YouTube Video URL (Optional)</span>
+              </label>
+              <span class="text-[11px] text-slate-400">Leave blank for text article</span>
+            </div>
+            <input 
+              type="url" 
+              id="post-video" 
+              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." 
+              class="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-xs font-mono text-slate-800 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            />
+          </div>
+
+          <!-- Real-Time Video Preview Container -->
+          <div id="video-preview-box" class="hidden p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <span class="text-[10px] font-mono uppercase font-bold text-slate-500 mb-2 block">Live Video Preview:</span>
+            <div class="relative aspect-video rounded-lg overflow-hidden bg-black shadow-sm">
+              <iframe 
+                id="video-iframe" 
+                class="w-full h-full" 
+                src="" 
+                title="YouTube Video Preview" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Article Image / Diagram Upload with Instant Preview -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-[#16A34A] fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span>Article Image / Diagram / Infographic</span>
+            </label>
+            <span class="text-[11px] text-slate-400">PNG, JPG, WebP</span>
+          </div>
+
+          <!-- File Picker & Direct Upload Button -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input 
+              type="file" 
+              id="image-file-input" 
+              accept="image/png, image/jpeg, image/webp, image/gif" 
+              class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer border border-slate-200 rounded-lg p-1"
+            />
+            <button 
+              type="button" 
+              id="upload-image-btn" 
+              class="shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold bg-[#112649] hover:bg-[#1a3666] text-white shadow-sm transition-colors flex items-center justify-center gap-1.5"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>Upload & Insert</span>
+            </button>
+          </div>
+
+          <!-- Cover Image URL input -->
+          <div>
+            <label for="post-image" class="block text-[11px] font-mono text-slate-500 mb-1">
+              Cover Image Path (optional, for card preview):
+            </label>
+            <input 
+              type="text" 
+              id="post-image" 
+              placeholder="e.g. /images/blog/diagram.png" 
+              class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-mono text-slate-800 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            />
+          </div>
+
+          <!-- Uploaded Image Preview Thumbnail -->
+          <div id="image-preview-box" class="hidden p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-4">
+            <img id="image-preview-thumb" src="" alt="Uploaded preview" class="w-20 h-14 object-cover rounded border border-slate-300" />
+            <div class="text-xs space-y-1">
+              <div class="font-bold text-black" id="image-preview-name">diagram.png</div>
+              <div class="text-[11px] text-slate-500 font-mono" id="image-preview-url">/images/blog/...</div>
+              <button type="button" id="set-as-cover-btn" class="text-[11px] font-bold text-[#16A34A] hover:underline">
+                Set as Cover Image
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Executive Summary & Tags -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="post-summary" class="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Executive Summary (Google SEO & Social Snippet) <span class="text-red-500">*</span>
+              </label>
+              <span id="summary-counter" class="text-[11px] font-mono text-slate-400">0 / 220 chars</span>
+            </div>
+            <textarea 
+              id="post-summary" 
+              rows="2" 
+              maxlength="300"
+              placeholder="1-2 sentence executive briefing that will appear in search results and social share cards..."
+              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="post-tags" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Tags (Comma-Separated)
+            </label>
+            <input 
+              type="text" 
+              id="post-tags" 
+              value="EU AI Act, Compliance, Governance" 
+              placeholder="EU AI Act, NIST AI RMF, ISO 42001, SOC 2" 
+              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs font-mono text-slate-800 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Social Media Cross-Posting & Ad Broadcast Studio -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-[#112649] text-white flex items-center justify-center text-sm font-bold">🚀</span>
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-black">Social Media Cross-Posting & Ad Studio</h3>
+                <p class="text-[11px] text-slate-500">Push directly to LinkedIn, X, Facebook, and WhatsApp Broadcast</p>
+              </div>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="auto-webhook-push" class="rounded text-[#16A34A] focus:ring-[#16A34A]" checked />
+              <span class="text-xs font-bold text-slate-700">Auto-Push on Publish</span>
+            </label>
+          </div>
+
+          <!-- Channel Selection -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100">
+              <input type="checkbox" id="ch-linkedin" checked class="rounded text-[#0077B5] focus:ring-[#0077B5]" />
+              <span class="font-bold text-slate-800">LinkedIn</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100">
+              <input type="checkbox" id="ch-twitter" checked class="rounded text-black focus:ring-black" />
+              <span class="font-bold text-slate-800">X (Twitter)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100">
+              <input type="checkbox" id="ch-whatsapp" checked class="rounded text-[#25D366] focus:ring-[#25D366]" />
+              <span class="font-bold text-slate-800">WhatsApp</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100">
+              <input type="checkbox" id="ch-facebook" checked class="rounded text-[#1877F2] focus:ring-[#1877F2]" />
+              <span class="font-bold text-slate-800">Facebook</span>
+            </label>
+          </div>
+
+          <!-- Social Copy & Brochure Link -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="social-custom-copy" class="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Custom Social Post / Ad Copy
+              </label>
+              <button type="button" id="refresh-social-copy-btn" class="text-[11px] font-bold text-[#16A34A] hover:underline flex items-center gap-1">
+                <span>↻ Refresh from Title/Summary</span>
+              </button>
+            </div>
+            <textarea 
+              id="social-custom-copy" 
+              rows="3" 
+              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs font-mono text-slate-800 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+              placeholder="Auto-generated social teaser including link to company brochure and hashtags..."
+            ></textarea>
+            <div class="flex items-center justify-between mt-1.5 text-[11px] text-slate-500">
+              <span>Includes link to <strong>Company Profile & Brochure</strong> (/company-profile)</span>
+              <span id="social-char-count">0 chars</span>
+            </div>
+          </div>
+
+          <!-- 1-Click Instant Push Launchers -->
+          <div class="pt-2 border-t border-slate-200">
+            <span class="text-[11px] font-mono font-bold text-slate-500 uppercase block mb-2">Instant 1-Click Launch Now (Test or Immediate Push):</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="launch-linkedin-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0077B5] hover:bg-[#005f93] text-white flex items-center gap-1.5 transition-all">
+                <span>LinkedIn</span>
+              </button>
+              <button type="button" id="launch-twitter-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-black hover:bg-slate-800 text-white flex items-center gap-1.5 transition-all">
+                <span>X (Twitter)</span>
+              </button>
+              <button type="button" id="launch-whatsapp-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#25D366] hover:bg-[#1ebc59] text-white flex items-center gap-1.5 transition-all">
+                <span>WhatsApp</span>
+              </button>
+              <button type="button" id="launch-facebook-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#1877F2] hover:bg-[#0c65d8] text-white flex items-center gap-1.5 transition-all">
+                <span>Facebook</span>
+              </button>
+              <button type="button" id="launch-all-social-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#112649] hover:bg-[#1a3666] text-white flex items-center gap-1.5 transition-all ml-auto">
+                <span>🚀 Launch All Channels</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Markdown Body Editor with Quick Toolbar -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <label for="post-body" class="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Article Content (Markdown)
+            </label>
+            <span class="text-[11px] text-slate-400">Supports headers, lists, checklists</span>
+          </div>
+
+          <!-- Markdown Toolbar -->
+          <div class="flex flex-wrap items-center gap-1 p-1.5 bg-slate-100 rounded-lg border border-slate-200 text-xs font-mono">
+            <button type="button" onclick="insertMd('**', '**')" class="px-2 py-1 rounded bg-white hover:bg-slate-200 font-bold" title="Bold">B</button>
+            <button type="button" onclick="insertMd('*', '*')" class="px-2 py-1 rounded bg-white hover:bg-slate-200 italic" title="Italic">I</button>
+            <button type="button" onclick="insertMd('\n### ', '\n')" class="px-2 py-1 rounded bg-white hover:bg-slate-200 font-bold" title="Heading 3">H3</button>
+            <button type="button" onclick="insertMd('\n- ', '')" class="px-2 py-1 rounded bg-white hover:bg-slate-200" title="Bullet List">• List</button>
+            <button type="button" onclick="insertMd('\n- [ ] ', '')" class="px-2 py-1 rounded bg-white hover:bg-slate-200" title="Checklist">☑ Check</button>
+            <button type="button" onclick="insertMd('\n> ', '\n')" class="px-2 py-1 rounded bg-white hover:bg-slate-200" title="Quote">❝ Quote</button>
+            <button type="button" onclick="insertMd('\n```\n', '\n```\n')" class="px-2 py-1 rounded bg-white hover:bg-slate-200" title="Code Block">&lt;/&gt;</button>
+          </div>
+
+          <textarea 
+            id="post-body" 
+            rows="14" 
+            placeholder="Write your article body in Markdown here..."
+            class="w-full p-4 rounded-lg border border-slate-300 font-mono text-xs leading-relaxed text-slate-800 focus:ring-2 focus:ring-[#16A34A] focus:outline-none"
+          >### Executive Summary
+
+Write your executive brief here...
+
+---
+
+### Core Regulatory Mandates & Impact Analysis
+
+- **Regulatory Citation:** Detail the requirement from EU AI Act, NIST AI RMF, or ISO 42001.
+- **Enterprise Risk:** Who is accountable within the organization?
+- **Technical Safeguards:** What logging and guardrails must engineering put in place?
+
+---
+
+### Action Checklist for Leadership
+
+- [ ] Audit internal systems against these criteria.
+- [ ] Establish governance logging and monitoring.
+- [ ] Review third-party vendor contracts.
+</textarea>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Live Article Preview (5 Cols) -->
+      <div class="lg:col-span-5">
+        <div class="sticky top-24 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-600 font-mono">Live Visual Preview</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-bold uppercase">Real-Time</span>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-300 shadow-sm p-6 overflow-hidden">
+            <!-- Preview Category & Read Time -->
+            <div class="flex items-center gap-2 mb-3 text-xs">
+              <span id="prev-category" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-300 uppercase">
+                AI Governance
+              </span>
+              <span class="text-slate-400">•</span>
+              <span id="prev-readtime" class="text-slate-500 font-mono text-xs">4 min read</span>
+            </div>
+
+            <!-- Preview Title -->
+            <h2 id="prev-title" class="text-xl font-black text-black leading-snug">
+              Article Title Preview
+            </h2>
+
+            <!-- Preview Summary -->
+            <p id="prev-summary" class="mt-3 text-xs text-slate-600 leading-relaxed">
+              Your executive summary will appear here as a crisp briefing.
+            </p>
+
+            <!-- Preview Video Thumbnail -->
+            <div id="prev-video-box" class="hidden mt-4 aspect-video rounded-lg overflow-hidden bg-slate-100 relative border border-slate-200">
+              <img id="prev-thumb-img" src="" alt="Thumbnail preview" class="w-full h-full object-cover" />
+              <div id="prev-badge-video" class="hidden absolute bottom-2 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span>VIDEO</span>
+              </div>
+            </div>
+
+            <!-- Preview Tags -->
+            <div id="prev-tags-container" class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-1.5">
+              <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">#EU AI Act</span>
+            </div>
+
+            <!-- Preview Author Signature -->
+            <div class="mt-6 pt-4 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>Author: <strong class="text-black">RKMIDIGILABS</strong></span>
+              <span class="text-[#16A34A] font-bold">Audit-Ready GRC</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Profile & Account Modal -->
+    <div id="profile-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-300 max-w-lg w-full overflow-hidden">
+        
+        <!-- Modal Header -->
+        <div class="bg-[#112649] p-6 text-white flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-white p-1 shrink-0 border border-slate-300">
+              <img src="/images/rkmidigilabs-logo.jpg" alt="RKMIDIGILABS Logo" class="w-full h-full object-contain" />
+            </div>
+            <div>
+              <h2 class="text-base font-black text-white">Administrator Profile</h2>
+              <p class="text-xs text-slate-300 font-mono">Organization & Account Credentials</p>
+            </div>
+          </div>
+          <button type="button" id="close-profile-btn" class="text-slate-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-4 text-xs">
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono uppercase font-bold text-slate-500 text-[10px]">Organization</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Active Practice</span>
+            </div>
+            <div class="text-base font-black text-black">RKMIDIGILABS</div>
+            <div class="text-slate-600 text-[11px]">Executive AI Governance, Enterprise GRC & Masterclasses</div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg border border-slate-200 bg-white">
+              <span class="text-[10px] font-mono uppercase text-slate-500 block mb-1">Official Email</span>
+              <a href="mailto:rkmvedant@gmail.com" class="font-bold text-black hover:text-[#16A34A] block truncate">
+                rkmvedant@gmail.com
+              </a>
+            </div>
+            <div class="p-3 rounded-lg border border-slate-200 bg-white">
+              <span class="text-[10px] font-mono uppercase text-slate-500 block mb-1">Mobile / WhatsApp</span>
+              <a href="tel:+919371650121" class="font-bold text-black hover:text-[#16A34A] block">
+                +91 9371650121
+              </a>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-mono">Access Role:</span>
+              <strong class="text-black">Super Administrator (Full Master Control)</strong>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-mono">Admin API Server:</span>
+              <strong class="text-[#16A34A]">http://localhost:4322 (Healthy)</strong>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-mono">Master Passcode:</span>
+              <span class="text-slate-600 font-mono text-[11px]">Configured in .env file</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+          <button 
+            type="button" 
+            id="modal-logout-btn" 
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors flex items-center gap-1.5"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Log Out</span>
+          </button>
+
+          <button 
+            type="button" 
+            id="modal-close-btn" 
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-[#112649] hover:bg-[#1a3666] text-white shadow-sm transition-colors"
+          >
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  const API_PORT = 4322;
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? `http://${window.location.hostname}:${API_PORT}` 
+    : window.location.origin;
+
+  const token = sessionStorage.getItem('rkmidigi_admin_token');
+  if (!token) {
+    window.location.href = '/admin/login';
+  }
+
+  // Logout
+  function handleLogout() {
+    sessionStorage.removeItem('rkmidigi_admin_token');
+    sessionStorage.removeItem('rkmidigi_admin_user');
+    window.location.href = '/admin/login?logged_out=1';
+  }
+
+  const logoutBtn = document.getElementById('logout-btn');
+  const modalLogoutBtn = document.getElementById('modal-logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+  if (modalLogoutBtn) modalLogoutBtn.addEventListener('click', handleLogout);
+
+  // Profile modal toggle
+  const profileBtn = document.getElementById('profile-btn');
+  const profileModal = document.getElementById('profile-modal');
+  const closeProfileBtn = document.getElementById('close-profile-btn');
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+
+  function openProfile() { if (profileModal) profileModal.classList.remove('hidden'); }
+  function closeProfile() { if (profileModal) profileModal.classList.add('hidden'); }
+
+  if (profileBtn) profileBtn.addEventListener('click', openProfile);
+  if (closeProfileBtn) closeProfileBtn.addEventListener('click', closeProfile);
+  if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeProfile);
+  if (profileModal) {
+    profileModal.addEventListener('click', (e) => {
+      if (e.target === profileModal) closeProfile();
+    });
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeProfile();
+  });
+
+  // Elements
+  const titleInput = document.getElementById('post-title') as HTMLInputElement;
+  const slugInput = document.getElementById('post-slug') as HTMLInputElement;
+  const slugPreview = document.getElementById('slug-preview');
+  const catSelect = document.getElementById('post-category') as HTMLSelectElement;
+  const readTimeInput = document.getElementById('post-readtime') as HTMLInputElement;
+  const featuredInput = document.getElementById('post-featured') as HTMLInputElement;
+  const videoInput = document.getElementById('post-video') as HTMLInputElement;
+  const postImage = document.getElementById('post-image') as HTMLInputElement;
+  const imageFileInput = document.getElementById('image-file-input') as HTMLInputElement;
+  const uploadImageBtn = document.getElementById('upload-image-btn') as HTMLButtonElement;
+  const imagePreviewBox = document.getElementById('image-preview-box');
+  const imagePreviewThumb = document.getElementById('image-preview-thumb') as HTMLImageElement;
+  const imagePreviewName = document.getElementById('image-preview-name');
+  const imagePreviewUrl = document.getElementById('image-preview-url');
+  const setAsCoverBtn = document.getElementById('set-as-cover-btn');
+  const summaryInput = document.getElementById('post-summary') as HTMLTextAreaElement;
+  const tagsInput = document.getElementById('post-tags') as HTMLInputElement;
+  const bodyInput = document.getElementById('post-body') as HTMLTextAreaElement;
+
+  const videoPreviewBox = document.getElementById('video-preview-box');
+  const videoIframe = document.getElementById('video-iframe') as HTMLIFrameElement;
+  const summaryCounter = document.getElementById('summary-counter');
+
+  // Preview elements
+  const prevTitle = document.getElementById('prev-title');
+  const prevCategory = document.getElementById('prev-category');
+  const prevReadTime = document.getElementById('prev-readtime');
+  const prevSummary = document.getElementById('prev-summary');
+  const prevVideoBox = document.getElementById('prev-video-box');
+  const prevThumbImg = document.getElementById('prev-thumb-img') as HTMLImageElement;
+  const prevBadgeVideo = document.getElementById('prev-badge-video');
+  const prevTagsContainer = document.getElementById('prev-tags-container');
+
+  const toast = document.getElementById('editor-toast');
+  const publishBtn = document.getElementById('publish-btn');
+  const downloadBtn = document.getElementById('download-md-btn');
+  const togglePublishBtn = document.getElementById('toggle-publish-btn');
+
+  let isPublished = true;
+
+  if (togglePublishBtn) {
+    togglePublishBtn.addEventListener('click', () => {
+      isPublished = !isPublished;
+      togglePublishBtn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+        isPublished 
+          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300' 
+          : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-emerald-100 hover:text-emerald-800 hover:border-emerald-300'
+      }`;
+      togglePublishBtn.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${isPublished ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+        <span>${isPublished ? 'Status: Published' : 'Status: Unpublished (Draft)'}</span>
+      `;
+    });
+  }
+
+  function showToast(msg: string, isError = false) {
+    if (toast && toastText) {
+      toastText.textContent = msg;
+      toast.className = `my-4 p-3 rounded-lg border text-xs font-bold flex items-center justify-between ${
+        isError ? 'bg-red-50 border-red-300 text-red-800' : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+      }`;
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 6000);
+    }
+  }
+
+  function slugify(text: string) {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  }
+
+  function extractYouTubeId(url: string) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  // Auto-slug generator
+  let manualSlug = false;
+  if (titleInput) {
+    titleInput.addEventListener('input', () => {
+      const val = titleInput.value;
+      if (prevTitle) prevTitle.textContent = val || 'Article Title Preview';
+      if (!manualSlug && slugInput && slugPreview) {
+        const slug = slugify(val);
+        slugInput.value = slug;
+        slugPreview.textContent = slug;
+      }
+    });
+  }
+
+  if (slugInput) {
+    slugInput.addEventListener('input', () => {
+      manualSlug = true;
+      if (slugPreview) slugPreview.textContent = slugInput.value;
+    });
+  }
+
+  // Category & Read Time sync
+  if (catSelect) {
+    catSelect.addEventListener('change', () => {
+      if (prevCategory) prevCategory.textContent = catSelect.value;
+    });
+  }
+  if (readTimeInput) {
+    readTimeInput.addEventListener('input', () => {
+      if (prevReadTime) prevReadTime.textContent = readTimeInput.value;
+    });
+  }
+
+  // Summary counter & sync
+  if (summaryInput) {
+    summaryInput.addEventListener('input', () => {
+      const len = summaryInput.value.length;
+      if (summaryCounter) summaryCounter.textContent = `${len} / 220 chars`;
+      if (prevSummary) prevSummary.textContent = summaryInput.value || 'Your executive summary will appear here as a crisp briefing.';
+    });
+  }
+
+  // Tags sync
+  if (tagsInput) {
+    tagsInput.addEventListener('input', () => {
+      const tags = tagsInput.value.split(',').map(t => t.trim()).filter(Boolean);
+      if (prevTagsContainer) {
+        prevTagsContainer.innerHTML = tags.map(t => `
+          <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">#${t}</span>
+        `).join('');
+      }
+    });
+  }
+
+  // Unified cover media preview (YouTube video or Image)
+  function updateCoverPreview() {
+    const ytid = videoInput ? extractYouTubeId(videoInput.value.trim()) : null;
+    const imgUrl = postImage ? postImage.value.trim() : '';
+
+    if (ytid) {
+      if (videoPreviewBox && videoIframe) {
+        videoIframe.src = `https://www.youtube-nocookie.com/embed/${ytid}`;
+        videoPreviewBox.classList.remove('hidden');
+      }
+      if (prevVideoBox && prevThumbImg) {
+        prevThumbImg.src = `https://img.youtube.com/vi/${ytid}/hqdefault.jpg`;
+        prevVideoBox.classList.remove('hidden');
+      }
+      if (prevBadgeVideo) prevBadgeVideo.classList.remove('hidden');
+    } else {
+      if (videoPreviewBox) videoPreviewBox.classList.add('hidden');
+      if (imgUrl) {
+        if (prevVideoBox && prevThumbImg) {
+          prevThumbImg.src = imgUrl;
+          prevVideoBox.classList.remove('hidden');
+        }
+        if (prevBadgeVideo) prevBadgeVideo.classList.add('hidden');
+      } else {
+        if (prevVideoBox) prevVideoBox.classList.add('hidden');
+      }
+    }
+  }
+
+  if (videoInput) {
+    videoInput.addEventListener('input', updateCoverPreview);
+  }
+
+  if (postImage) {
+    postImage.addEventListener('input', updateCoverPreview);
+  }
+
+  // Image upload handling
+  if (uploadImageBtn && imageFileInput) {
+    uploadImageBtn.addEventListener('click', () => {
+      const file = imageFileInput.files?.[0];
+      if (!file) {
+        alert('Please choose an image file first (PNG, JPG, WebP, GIF).');
+        return;
+      }
+
+      uploadImageBtn.setAttribute('disabled', 'true');
+      uploadImageBtn.innerHTML = `<span>Uploading...</span>`;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const fileData = e.target?.result as string;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/upload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              fileName: file.name,
+              fileData
+            })
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            showToast(`✅ Image uploaded: ${result.fileName}`);
+            if (imagePreviewBox && imagePreviewThumb && imagePreviewName && imagePreviewUrl) {
+              imagePreviewThumb.src = result.url;
+              imagePreviewName.textContent = result.fileName;
+              imagePreviewUrl.textContent = result.url;
+              imagePreviewBox.classList.remove('hidden');
+            }
+
+            // Auto-populate cover image if empty
+            if (postImage && !postImage.value.trim()) {
+              postImage.value = result.url;
+              updateCoverPreview();
+            }
+
+            // Insert markdown snippet into post body at cursor
+            if (bodyInput) {
+              const snippet = `\n${result.markdown}\n`;
+              const start = bodyInput.selectionStart || 0;
+              const end = bodyInput.selectionEnd || 0;
+              const text = bodyInput.value;
+              bodyInput.value = text.substring(0, start) + snippet + text.substring(end);
+              bodyInput.focus();
+              bodyInput.selectionStart = bodyInput.selectionEnd = start + snippet.length;
+            }
+          } else {
+            showToast(result.error || 'Failed to upload image.', true);
+          }
+        } catch (err) {
+          showToast('Failed to upload image. Verify Admin API server on port 4322.', true);
+        } finally {
+          uploadImageBtn.removeAttribute('disabled');
+          uploadImageBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Upload & Insert</span>`;
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (setAsCoverBtn) {
+    setAsCoverBtn.addEventListener('click', () => {
+      if (imagePreviewUrl && postImage) {
+        postImage.value = imagePreviewUrl.textContent || '';
+        updateCoverPreview();
+        showToast('✅ Set as cover image!');
+      }
+    });
+  }
+
+  // Toolbar insertion helper
+  (window as any).insertMd = (prefix: string, suffix: string) => {
+    if (!bodyInput) return;
+    const start = bodyInput.selectionStart;
+    const end = bodyInput.selectionEnd;
+    const text = bodyInput.value;
+    const selected = text.substring(start, end);
+    const replacement = prefix + selected + suffix;
+    bodyInput.value = text.substring(0, start) + replacement + text.substring(end);
+    bodyInput.focus();
+    bodyInput.selectionStart = start + prefix.length;
+    bodyInput.selectionEnd = start + prefix.length + selected.length;
+  };
+
+  // Download raw markdown file
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      const title = titleInput.value.trim() || 'untitled-post';
+      const slug = slugInput.value.trim() || slugify(title);
+      const category = catSelect.value;
+      const readTime = readTimeInput.value || '4 min read';
+      const featured = featuredInput.checked;
+      const video = videoInput.value.trim();
+      const image = postImage ? postImage.value.trim() : '';
+      const summary = summaryInput.value.trim();
+      const tags = tagsInput.value.split(',').map(t => t.trim()).filter(Boolean);
+      const body = bodyInput.value;
+
+      let md = '---\n';
+      md += `title: "${title.replace(/"/g, '\\"')}"\n`;
+      md += `date: ${new Date().toISOString().split('T')[0]}\n`;
+      md += `category: "${category}"\n`;
+      md += `tags: ${JSON.stringify(tags)}\n`;
+      if (video) md += `youtubeUrl: "${video}"\n`;
+      if (image) md += `image: "${image}"\n`;
+      md += `summary: "${summary.replace(/"/g, '\\"')}"\n`;
+      md += `featured: ${featured}\n`;
+      md += `published: ${isPublished}\n`;
+      md += `readTime: "${readTime}"\n`;
+      md += `author: "RKMIDIGILABS"\n`;
+      md += '---\n\n';
+      md += body;
+
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${slug}.md`;
+      a.click();
+    });
+  }
+
+  // --- Social Media Studio Logic ---
+  const socialCopyArea = document.getElementById('social-custom-copy') as HTMLTextAreaElement;
+  const refreshSocialCopyBtn = document.getElementById('refresh-social-copy-btn');
+  const socialCharCount = document.getElementById('social-char-count');
+  const autoWebhookPush = document.getElementById('auto-webhook-push') as HTMLInputElement;
+
+  function generateDefaultSocialCopy() {
+    const title = titleInput?.value.trim() || 'New Analysis';
+    const summary = summaryInput?.value.trim() || '';
+    const slug = slugInput?.value.trim() || slugify(title);
+    const brochureUrl = `${window.location.origin}/company-profile`;
+    const postUrl = `${window.location.origin}/blog/${slug}`;
+    const rawTags = tagsInput?.value.split(',').map(t => t.trim()).filter(Boolean) || [];
+    const hashtags = (rawTags.length ? rawTags.map(t => '#' + t.replace(/\s+/g, '')) : ['#AIGovernance', '#RKMIDIGILABS']).join(' ');
+
+    return `📢 ${title}\n\n${summary ? summary + '\n\n' : ''}📖 Article Analysis: ${postUrl}\n🏢 Company Profile & Corporate Brochure: ${brochureUrl}\n\n${hashtags}`;
+  }
+
+  function updateSocialCopy(manual = false) {
+    if (!socialCopyArea) return;
+    if (!manual && socialCopyArea.dataset.manualEdited === 'true') return;
+    const copy = generateDefaultSocialCopy();
+    socialCopyArea.value = copy;
+    if (socialCharCount) socialCharCount.textContent = `${copy.length} chars`;
+  }
+
+  socialCopyArea?.addEventListener('input', () => {
+    socialCopyArea.dataset.manualEdited = 'true';
+    if (socialCharCount) socialCharCount.textContent = `${socialCopyArea.value.length} chars`;
+  });
+
+  refreshSocialCopyBtn?.addEventListener('click', () => {
+    if (socialCopyArea) socialCopyArea.dataset.manualEdited = 'false';
+    updateSocialCopy(true);
+    showToast('Refreshed social post copy!');
+  });
+
+  titleInput?.addEventListener('input', () => updateSocialCopy());
+  summaryInput?.addEventListener('input', () => updateSocialCopy());
+  tagsInput?.addEventListener('input', () => updateSocialCopy());
+
+  // Launch buttons
+  document.getElementById('launch-linkedin-btn')?.addEventListener('click', () => {
+    const slug = slugInput?.value.trim() || slugify(titleInput.value.trim() || 'post');
+    const url = `${window.location.origin}/blog/${slug}`;
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'width=600,height=600');
+  });
+
+  document.getElementById('launch-twitter-btn')?.addEventListener('click', () => {
+    const text = socialCopyArea?.value || generateDefaultSocialCopy();
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'width=600,height=600');
+  });
+
+  document.getElementById('launch-whatsapp-btn')?.addEventListener('click', () => {
+    const text = socialCopyArea?.value || generateDefaultSocialCopy();
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'width=800,height=700');
+  });
+
+  document.getElementById('launch-facebook-btn')?.addEventListener('click', () => {
+    const slug = slugInput?.value.trim() || slugify(titleInput.value.trim() || 'post');
+    const url = `${window.location.origin}/blog/${slug}`;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=600,height=600');
+  });
+
+  document.getElementById('launch-all-social-btn')?.addEventListener('click', () => {
+    const slug = slugInput?.value.trim() || slugify(titleInput.value.trim() || 'post');
+    const text = socialCopyArea?.value || generateDefaultSocialCopy();
+    const url = `${window.location.origin}/blog/${slug}`;
+
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    showToast('Launched LinkedIn, X, WhatsApp, and Facebook share windows!');
+  });
+
+  // Publish post to backend API
+  if (publishBtn) {
+    publishBtn.addEventListener('click', async () => {
+      const title = titleInput.value.trim();
+      if (!title) {
+        alert('Article Title is required.');
+        titleInput.focus();
+        return;
+      }
+
+      const slug = slugInput.value.trim() || slugify(title);
+      const category = catSelect.value;
+      const readTime = readTimeInput.value || '4 min read';
+      const featured = featuredInput.checked;
+      const youtubeUrl = videoInput.value.trim();
+      const image = postImage ? postImage.value.trim() : '';
+      const summary = summaryInput.value.trim() || `Key analysis and enterprise governance breakdown on ${title}.`;
+      const tags = tagsInput.value.split(',').map(t => t.trim()).filter(Boolean);
+      const body = bodyInput.value;
+
+      publishBtn.setAttribute('disabled', 'true');
+      publishBtn.innerHTML = `<span>Saving & Publishing...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/posts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title,
+            slug,
+            category,
+            readTime,
+            featured,
+            published: isPublished,
+            youtubeUrl,
+            image,
+            summary,
+            tags,
+            body
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          // Broadcast to other tabs
+          try {
+            const bc = new BroadcastChannel('rkmidigi_blog_channel');
+            bc.postMessage({ type: 'POST_CREATED', slug, published: isPublished, timestamp: Date.now() });
+          } catch(e) {}
+          try {
+            localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: isPublished, timestamp: Date.now() }));
+          } catch(e) {}
+          // Auto Webhook Push if enabled
+          if (autoWebhookPush && autoWebhookPush.checked) {
+            try {
+              await fetch(`${API_BASE}/api/admin/social-push`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  title,
+                  summary,
+                  url: `/blog/${slug}`,
+                  customCopy: socialCopyArea?.value,
+                  tags
+                })
+              });
+            } catch (pushErr) {}
+          }
+
+          showToast(`✅ Post published & broadcasted! Available at /blog/${slug}`);
+          setTimeout(() => {
+            window.location.href = '/admin';
+          }, 1500);
+        } else {
+          showToast(data.error || 'Failed to save post', true);
+        }
+      } catch (err) {
+        showToast('Network error contacting Admin API server on port 4322.', true);
+      } finally {
+        publishBtn.removeAttribute('disabled');
+        publishBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Publish to Website</span>`;
+      }
+    });
+  }
+</script>
+</BaseLayout>

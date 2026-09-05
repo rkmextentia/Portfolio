@@ -1,0 +1,156 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="Admin Login — RKMIDIGILABS" 
+  description="Secure Content Management Administration Portal for RKMIDIGILABS."
+>
+  <div class="min-h-[75vh] flex items-center justify-center px-4 py-12 bg-slate-50">
+    <div class="w-full max-w-md bg-white border border-slate-300 rounded-2xl shadow-xl overflow-hidden">
+      
+      <!-- Card Header in Corporate Navy #112649 -->
+      <div class="bg-[#112649] px-6 py-8 text-center text-white border-b border-[#1d3d75]">
+        <div class="w-12 h-12 mx-auto mb-3 bg-white p-1 rounded-xl shadow-sm border border-slate-300">
+          <img src="/images/rkmidigilabs-logo.jpg" alt="RKMIDIGILABS Logo" class="w-full h-full object-contain" />
+        </div>
+        <h1 class="text-xl font-black text-white tracking-tight">RKMIDIGILABS Admin Studio</h1>
+        <p class="text-xs text-slate-300 mt-1 font-mono uppercase tracking-wider">Content & Media Control Hub</p>
+      </div>
+
+      <!-- Login Form -->
+      <div class="p-6 sm:p-8">
+        
+        <div id="logged-out-alert" class="hidden p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-xs text-emerald-800 font-bold mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-[#16A34A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span>You have been signed out successfully.</span>
+        </div>
+
+        <form id="login-form" class="space-y-5">
+          <div>
+            <label for="admin-passcode" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Master Admin Passcode
+            </label>
+            <div class="relative">
+              <input 
+                type="password" 
+                id="admin-passcode" 
+                name="passcode"
+                placeholder="Enter admin passcode" 
+                required
+                class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-black font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent transition-all"
+              />
+              <button 
+                type="button" 
+                id="toggle-visibility"
+                class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 text-xs font-bold"
+              >
+                SHOW
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1.5">
+              Default passcode configured in <code class="bg-slate-100 px-1 py-0.5 rounded border border-slate-200">.env</code>
+            </p>
+          </div>
+
+          <div id="error-alert" class="hidden p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+            Invalid passcode. Please verify your credentials.
+          </div>
+
+          <button 
+            type="submit" 
+            id="submit-btn"
+            class="w-full py-3.5 px-4 rounded-lg font-bold text-sm bg-[#16A34A] hover:bg-[#15803D] text-white transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            <span>Authenticate & Access Studio</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-5 border-t border-slate-200 text-center">
+          <a href="/" class="text-xs font-bold text-slate-600 hover:text-black">
+            ← Return to Public Website
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const API_PORT = 4322;
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? `http://${window.location.hostname}:${API_PORT}` 
+    : window.location.origin;
+
+  // Show logged out notice if redirected
+  if (new URLSearchParams(window.location.search).get('logged_out')) {
+    const loAlert = document.getElementById('logged-out-alert');
+    if (loAlert) loAlert.classList.remove('hidden');
+  } else {
+    // Auto redirect if already authenticated
+    const existingToken = sessionStorage.getItem('rkmidigi_admin_token');
+    if (existingToken) {
+      window.location.href = '/admin';
+    }
+  }
+
+  const form = document.getElementById('login-form');
+  const passInput = document.getElementById('admin-passcode') as HTMLInputElement;
+  const toggleBtn = document.getElementById('toggle-visibility');
+  const errorAlert = document.getElementById('error-alert');
+  const submitBtn = document.getElementById('submit-btn');
+
+  if (toggleBtn && passInput) {
+    toggleBtn.addEventListener('click', () => {
+      const isPass = passInput.type === 'password';
+      passInput.type = isPass ? 'text' : 'password';
+      toggleBtn.textContent = isPass ? 'HIDE' : 'SHOW';
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = passInput.value.trim();
+      if (!password) return;
+
+      if (submitBtn) {
+        submitBtn.setAttribute('disabled', 'true');
+        submitBtn.innerHTML = `<span>Verifying...</span>`;
+      }
+      if (errorAlert) errorAlert.classList.add('hidden');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success && data.token) {
+          sessionStorage.setItem('rkmidigi_admin_token', data.token);
+          sessionStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
+          window.location.href = '/admin';
+        } else {
+          if (errorAlert) {
+            errorAlert.textContent = data.error || 'Authentication failed.';
+            errorAlert.classList.remove('hidden');
+          }
+        }
+      } catch (err) {
+        if (errorAlert) {
+          errorAlert.textContent = 'Could not connect to Admin API server. Make sure "npm run admin:server" is active on port 4322.';
+          errorAlert.classList.remove('hidden');
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.removeAttribute('disabled');
+          submitBtn.innerHTML = `<span>Authenticate & Access Studio</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
+        }
+      }
+    });
+  }
+</script>
+</BaseLayout>

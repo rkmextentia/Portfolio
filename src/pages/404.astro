@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page Not Found (404)">
+  <div class="max-w-xl mx-auto px-4 py-24 text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 border border-slate-300 text-slate-800 font-black text-2xl mb-6">
+      404
+    </div>
+    <h1 class="text-3xl font-black text-black tracking-tight mb-3">
+      Page Not Found
+    </h1>
+    <p class="text-slate-600 text-sm mb-8">
+      The blog article, service, or regulatory framework page you are looking for has moved or does not exist.
+    </p>
+    <a 
+      href="/" 
+      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+    >
+      Return to Homepage →
+    </a>
+  </div>
+</BaseLayout>

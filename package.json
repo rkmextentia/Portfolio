@@ -1,0 +1,21 @@
+{
+  "name": "grc-aigp-portfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev --host",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview --host",
+    "new-post": "node scripts/new-post.js",
+    "admin:server": "node server/admin-api.js"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.2.1",
+    "@astrojs/tailwind": "^5.1.5",
+    "@tailwindcss/typography": "^0.5.16",
+    "astro": "^4.16.18",
+    "tailwindcss": "^3.4.17"
+  }
+}

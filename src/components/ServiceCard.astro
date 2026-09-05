@@ -1,0 +1,88 @@
+---
+interface Props {
+  title: string;
+  badge: string;
+  badgeType?: "active" | "roadmap";
+  description: string;
+  deliverables: string[];
+  audience: string;
+  inquirySubject: string;
+  highlight?: boolean;
+}
+
+const {
+  title,
+  badge,
+  badgeType = "active",
+  description,
+  deliverables,
+  audience,
+  inquirySubject,
+  highlight = false
+} = Astro.props;
+
+const mailtoUrl = `mailto:rkmvedant@gmail.com?subject=${encodeURIComponent(inquirySubject)}&body=${encodeURIComponent(`Hi RKMIDIGILABS,\n\nI am reaching out regarding ${title}.\n\nOrganization:\nPhone:\nKey Questions:\n\nBest regards,`)}`;
+---
+
+<div class={`relative rounded-xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 ${
+  highlight 
+    ? 'bg-white border-2 border-[#16A34A] shadow-md' 
+    : 'bg-white border border-slate-300 shadow-sm hover:shadow-md'
+}`}>
+  {highlight && (
+    <div class="absolute -top-3 left-6 sm:left-8 px-3 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase bg-[#16A34A] text-white shadow-sm">
+      Core Practice
+    </div>
+  )}
+
+  <div>
+    <!-- Badge & Audience in Grey Highlights -->
+    <div class="flex items-center justify-between gap-2 mb-4">
+      <span class={`px-2.5 py-1 rounded text-xs font-bold tracking-wide uppercase ${
+        badgeType === "roadmap" 
+          ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+          : 'bg-slate-100 text-slate-800 border border-slate-300'
+      }`}>
+        {badge}
+      </span>
+      <span class="text-xs text-slate-500 font-mono font-medium">{audience}</span>
+    </div>
+
+    <!-- Black Heading -->
+    <h3 class="text-xl sm:text-2xl font-black text-black tracking-tight leading-snug">
+      {title}
+    </h3>
+    <p class="mt-3 text-sm text-slate-700 leading-relaxed font-normal">
+      {description}
+    </p>
+
+    <!-- Key Deliverables List with Green Checkmarks -->
+    <div class="mt-6 pt-6 border-t border-slate-200">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Key Deliverables & Scope:</h4>
+      <ul class="space-y-2.5 text-sm text-slate-800">
+        {deliverables.map(item => (
+          <li class="flex items-start gap-2.5">
+            <svg class="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Green Action Button -->
+  <div class="mt-8 pt-6 border-t border-slate-200">
+    <button 
+      type="button"
+      data-service={title}
+      class={`open-inquiry-modal-btn w-full py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+        badgeType === "roadmap"
+          ? 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300'
+          : 'bg-[#16A34A] hover:bg-[#15803D] text-white shadow-sm'
+      }`}
+    >
+      <span>{badgeType === "roadmap" ? "Express Early Interest" : "Enquire with Email"}</span>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    </button>
+  </div>
+</div>

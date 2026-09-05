@@ -1,0 +1,356 @@
+---
+// Global Service Inquiry Popup Modal for RKMIDIGILABS
+---
+
+<!-- Inquiry Modal Overlay -->
+<div 
+  id="inquiry-modal" 
+  class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="inquiry-modal-title"
+>
+  <div class="bg-white rounded-2xl border border-slate-300 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    
+    <!-- Modal Header with #112649 Corporate Navy -->
+    <div class="bg-[#112649] text-white p-5 sm:p-6 flex items-center justify-between border-b border-[#1d3d75]">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl overflow-hidden bg-white p-0.5 shrink-0 border border-slate-300 shadow-xs">
+          <img 
+            src="/images/rkmidigilabs-logo.jpg" 
+            alt="RKMIDIGILABS Logo" 
+            class="w-full h-full object-contain"
+          />
+        </div>
+        <div>
+          <h3 id="inquiry-modal-title" class="font-extrabold text-base sm:text-lg tracking-tight leading-snug">
+            Enquire About Services
+          </h3>
+          <p class="text-[11px] text-slate-300 font-mono">
+            RKMIDIGILABS • Directly Delivered to rkmvedant@gmail.com
+          </p>
+        </div>
+      </div>
+      
+      <button 
+        type="button" 
+        id="close-inquiry-modal-btn" 
+        class="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#1a3666] transition-colors"
+        aria-label="Close inquiry window"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- 1. Inquiry Form View -->
+    <form id="service-inquiry-form" class="p-6 sm:p-7 space-y-4 text-xs">
+      
+      <!-- Full Name -->
+      <div>
+        <label for="inq-name" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-1">
+          Full Name <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="inq-name" 
+          required 
+          placeholder="e.g. Dr. Rajesh Sharma / Chief Compliance Officer"
+          class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#16A34A] focus:border-transparent focus:outline-none transition-all font-medium"
+        />
+      </div>
+
+      <!-- Email & Phone Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="inq-email" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-1">
+            Email Address <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="inq-email" 
+            required 
+            placeholder="name@company.com"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#16A34A] focus:border-transparent focus:outline-none transition-all font-medium"
+          />
+        </div>
+
+        <div>
+          <label for="inq-phone" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-1">
+            Phone / Mobile Number <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="tel" 
+            id="inq-phone" 
+            required 
+            placeholder="+91 98765 43210"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#16A34A] focus:border-transparent focus:outline-none transition-all font-medium"
+          />
+        </div>
+      </div>
+
+      <!-- Services Dropdown (All Options) -->
+      <div>
+        <label for="inq-service" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-1">
+          Service Offering <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <select 
+            id="inq-service" 
+            required
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white font-bold focus:ring-2 focus:ring-[#16A34A] focus:border-transparent focus:outline-none appearance-none transition-all pr-8"
+          >
+            <option value="AI Governance Consultancy">AI Governance Consultancy (EU AI Act, ISO 42001, NIST AI RMF, FRIA)</option>
+            <option value="Enterprise GRC Advisory">Enterprise GRC Advisory (ISO 27001, SOC 2, TPRM)</option>
+            <option value="Corporate Training Workshops">Corporate Training Workshops (Executive & Tech Masterclasses)</option>
+            <option value="Security Operations Center (SOC) Governance">Security Operations Center (SOC) Governance (Roadmap)</option>
+            <option value="Custom Executive Advisory & Masterclass">Custom Executive Advisory & Consultation</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description / Requirements Textarea -->
+      <div>
+        <label for="inq-description" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-1">
+          Project Details & Requirements <span class="text-red-500">*</span>
+        </label>
+        <textarea 
+          id="inq-description" 
+          required 
+          rows="3"
+          placeholder="Briefly describe your systems, organization scale, target frameworks, or timeline..."
+          class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#16A34A] focus:border-transparent focus:outline-none transition-all leading-relaxed"
+        ></textarea>
+        <p class="text-[10px] text-slate-500 mt-1">
+          Confidential advisory briefing. Your information is protected and received directly by practice leadership.
+        </p>
+      </div>
+
+      <!-- Submit / Cancel Action Buttons -->
+      <div class="pt-2 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
+        <button 
+          type="button" 
+          id="cancel-inquiry-btn" 
+          class="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          type="submit" 
+          id="submit-inquiry-btn" 
+          class="w-full sm:w-auto px-6 py-2.5 rounded-lg text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-sm flex items-center justify-center gap-2 transition-all"
+        >
+          <span>Submit Inquiry</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- 2. Success Confirmation View (Hidden Initially) -->
+    <div id="inquiry-success-view" class="hidden p-6 sm:p-8 text-center space-y-4">
+      <div class="w-14 h-14 rounded-full bg-emerald-100 text-[#16A34A] flex items-center justify-center mx-auto shadow-xs">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+
+      <div>
+        <h4 class="text-xl font-black text-black tracking-tight">
+          Inquiry Successfully Sent!
+        </h4>
+        <p class="text-xs text-slate-600 max-w-sm mx-auto mt-1 leading-relaxed">
+          Your service inquiry has been formatted and delivered directly to <strong class="text-black font-bold">rkmvedant@gmail.com</strong>.
+        </p>
+      </div>
+
+      <!-- Reference Details Card -->
+      <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-left space-y-1 max-w-md mx-auto">
+        <div class="flex justify-between"><span class="text-slate-500">Ref ID:</span> <strong id="success-ref-id" class="text-black">--</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">Offering:</span> <strong id="success-service-name" class="text-emerald-700">--</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">Recipient:</span> <strong class="text-black">rkmvedant@gmail.com</strong></div>
+      </div>
+
+      <!-- Dual-Send Backup Options -->
+      <div class="space-y-2 pt-2 max-w-md mx-auto">
+        <span class="text-[11px] font-bold text-slate-500 block uppercase tracking-wider">Direct Client Launch Options:</span>
+        <div class="flex flex-col sm:flex-row items-center gap-2">
+          <a 
+            id="direct-mailto-btn" 
+            href="#" 
+            class="w-full py-2.5 px-3 rounded-lg text-xs font-bold bg-[#112649] hover:bg-[#1d3d75] text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <span>Open in Email App</span>
+          </a>
+          <a 
+            id="direct-whatsapp-btn" 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="w-full py-2.5 px-3 rounded-lg text-xs font-bold bg-[#25D366] hover:bg-[#1ebc59] text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+          >
+            <span>Send on WhatsApp</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-200">
+        <button 
+          type="button" 
+          id="done-inquiry-btn" 
+          class="px-6 py-2.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
+        >
+          Done / Close Window
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script is:inline>
+  (function() {
+    const modal = document.getElementById('inquiry-modal');
+    const form = document.getElementById('service-inquiry-form');
+    const successView = document.getElementById('inquiry-success-view');
+    const closeBtn = document.getElementById('close-inquiry-modal-btn');
+    const cancelBtn = document.getElementById('cancel-inquiry-btn');
+    const doneBtn = document.getElementById('done-inquiry-btn');
+    const submitBtn = document.getElementById('submit-inquiry-btn');
+
+    const nameInput = document.getElementById('inq-name');
+    const emailInput = document.getElementById('inq-email');
+    const phoneInput = document.getElementById('inq-phone');
+    const serviceSelect = document.getElementById('inq-service');
+    const descInput = document.getElementById('inq-description');
+
+    const successRefId = document.getElementById('success-ref-id');
+    const successServiceName = document.getElementById('success-service-name');
+    const directMailtoBtn = document.getElementById('direct-mailto-btn');
+    const directWhatsappBtn = document.getElementById('direct-whatsapp-btn');
+
+    function openModal(serviceTitle) {
+      if (!modal) return;
+      
+      // Auto-match service title in dropdown if passed
+      if (serviceTitle && serviceSelect) {
+        for (let i = 0; i < serviceSelect.options.length; i++) {
+          const opt = serviceSelect.options[i];
+          if (opt.value.toLowerCase().includes(serviceTitle.toLowerCase()) || 
+              serviceTitle.toLowerCase().includes(opt.value.toLowerCase())) {
+            serviceSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
+      // Reset views
+      if (form) form.classList.remove('hidden');
+      if (successView) successView.classList.add('hidden');
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      if (nameInput) setTimeout(() => nameInput.focus(), 50);
+    }
+
+    function closeModal() {
+      if (!modal) return;
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      if (form) form.reset();
+    }
+
+    // Attach click listeners to all open-inquiry-modal-btn buttons
+    document.addEventListener('click', function(e) {
+      const target = e.target.closest('.open-inquiry-modal-btn');
+      if (target) {
+        e.preventDefault();
+        const service = target.getAttribute('data-service') || '';
+        openModal(service);
+      }
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (doneBtn) doneBtn.addEventListener('click', closeModal);
+
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    window.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    // Form Submission
+    if (form) {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const payload = {
+          name: nameInput?.value.trim(),
+          email: emailInput?.value.trim(),
+          phone: phoneInput?.value.trim(),
+          service: serviceSelect?.value,
+          description: descInput?.value.trim()
+        };
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>Sending to rkmvedant@gmail.com...</span>';
+        }
+
+        const API_BASE = window.location.hostname === 'localhost' 
+          ? 'http://localhost:4322' 
+          : window.location.origin;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/inquire`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            if (successRefId) successRefId.textContent = data.inquiryId || 'RKM-INQ';
+            if (successServiceName) successServiceName.textContent = payload.service;
+            
+            // Set direct mailto fallback
+            if (directMailtoBtn && data.mailtoUrl) {
+              directMailtoBtn.href = data.mailtoUrl;
+            }
+
+            // Set WhatsApp fallback
+            if (directWhatsappBtn) {
+              const waMsg = `*RKMIDIGILABS Service Inquiry*\n\nRef: ${data.inquiryId}\nName: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone}\nService: ${payload.service}\n\nRequirements:\n${payload.description}`;
+              directWhatsappBtn.href = `https://wa.me/919371650121?text=${encodeURIComponent(waMsg)}`;
+            }
+
+            // Switch to success view
+            form.classList.add('hidden');
+            if (successView) successView.classList.remove('hidden');
+          } else {
+            alert(data.error || 'Failed to dispatch inquiry. Please try again.');
+          }
+        } catch (err) {
+          // Graceful fallback to mailto if API unreachable
+          const mailto = `mailto:rkmvedant@gmail.com?subject=${encodeURIComponent(`[RKMIDIGILABS Inquiry] ${payload.service} - ${payload.name}`)}&body=${encodeURIComponent(`Name: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone}\nService: ${payload.service}\n\n${payload.description}`)}`;
+          window.location.href = mailto;
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Submit Inquiry</span><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+          }
+        }
+      });
+    }
+
+    // Expose globally for direct triggering
+    window.openInquiryModal = openModal;
+  })();
+</script>

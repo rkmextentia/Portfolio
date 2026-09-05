@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+---
+
+<BaseLayout 
+  title="Consulting & Corporate Training Services"
+  description="Advisory services across AI Governance (EU AI Act, NIST AI RMF, ISO 42001), Enterprise GRC, Corporate Training, and Security Operations."
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+    
+    <div class="max-w-3xl mb-16">
+      <span class="text-xs font-mono font-bold tracking-widest uppercase text-blue-700">Practice Offerings</span>
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-[#0A2540] tracking-tight mt-2 leading-tight">
+        Advisory & Corporate Training Services
+      </h1>
+      <p class="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+        Helping organizations navigate regulatory complexity, manage model uncertainty, and foster a defensible risk posture across cross-functional teams.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <ServiceCard 
+        title="AI Governance Consultancy"
+        badge="Regulatory Compliance"
+        audience="For Product, Engineering & Legal"
+        description="End-to-end guidance to classify models, comply with global AI directives, and establish defensible internal oversight."
+        deliverables={[
+          "EU AI Act High-Risk System Classification & Annex III Gap Audits",
+          "Mandatory Fundamental Rights Impact Assessments (FRIA)",
+          "NIST AI RMF 1.0 (Govern, Map, Measure, Manage) Blueprint",
+          "ISO/IEC 42001 Artificial Intelligence Management System (AIMS)",
+          "Generative AI & Shadow AI Corporate Guardrails"
+        ]}
+        inquirySubject="Consulting Inquiry: AI Governance & Compliance"
+        highlight={true}
+      />
+
+      <ServiceCard 
+        title="Enterprise GRC Advisory"
+        badge="Risk & Audit Assurance"
+        audience="For CISOs, CROs & Audit Teams"
+        description="Pragmatic governance programs that eliminate audit anxiety, streamline evidence collection, and secure client trust."
+        deliverables={[
+          "ISO 27001:2022 & SOC 2 Type II Readiness & Remediation",
+          "Third-Party Risk Management (TPRM) & Vendor AI Questionnaires",
+          "Enterprise Risk Registers, Scoring & Treatment Plans",
+          "Internal Policy Architecture & Board Risk Reporting"
+        ]}
+        inquirySubject="Consulting Inquiry: Enterprise GRC Advisory"
+      />
+
+      <ServiceCard 
+        title="Corporate Training Workshops"
+        badge="Team Upskilling"
+        audience="For C-Suite, Product & Tech Teams"
+        description="Engaging, scenario-based masterclasses designed to bring cross-functional teams up to speed on AI risk and compliance."
+        deliverables={[
+          "Executive & Boardroom Briefing on AI Regulatory Trajectories",
+          "Hands-On AI Risk & Red-Teaming for Engineers & Data Scientists",
+          "GRC Fundamentals for Product Managers & Architects",
+          "Customized Internal Compliance & Security Habit Workshops"
+        ]}
+        inquirySubject="Corporate Training Inquiry: Team Masterclasses"
+      />
+
+    </div>
+
+    <div id="soc" class="mt-16 p-8 sm:p-10 rounded-xl bg-slate-50 border border-slate-300 shadow-corporate">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div class="flex items-center gap-3">
+          <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+            Roadmap / Expanding Soon
+          </span>
+          <h2 class="text-2xl font-bold text-[#0A2540] tracking-tight">
+            Security Operations Center (SOC) Governance
+          </h2>
+        </div>
+        <span class="text-xs font-mono text-slate-500">Future Service Pillar</span>
+      </div>
+
+      <p class="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl font-normal">
+        As the practice scales, we will be rolling out specialized advisory for <strong>Security Operations Center (SOC) Architecture</strong>, continuous monitoring governance, incident triage workflows, and SIEM/SOAR compliance telemetry.
+      </p>
+
+      <div class="mt-6 pt-6 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4">
+        <div class="text-xs text-slate-500 font-mono">
+          Anticipated scope: Continuous monitoring controls, SOC 2 alert triage, and Incident Response governance.
+        </div>
+        <button 
+          type="button"
+          data-service="Security Operations Center (SOC) Governance"
+          class="open-inquiry-modal-btn px-4 py-2 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 transition-colors shadow-sm cursor-pointer"
+        >
+          Express Early Interest →
+        </button>
+      </div>
+    </div>
+
+  </div>
+</BaseLayout>

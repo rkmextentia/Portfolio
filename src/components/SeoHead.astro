@@ -1,0 +1,171 @@
+---
+import { getYouTubeInfo } from '../utils/youtube';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  canonicalUrl?: string;
+  type?: "website" | "article";
+  publishedTime?: string;
+  tags?: string[];
+  youtubeUrl?: string;
+}
+
+const {
+  title,
+  description,
+  image = "/images/rkmidigilabs-logo.jpg",
+  canonicalUrl = Astro.url.href,
+  type = "website",
+  publishedTime,
+  tags = [],
+  youtubeUrl
+} = Astro.props;
+
+const siteTitle = `${title} | RKMIDIGILABS — AI Governance & Enterprise GRC Practice`;
+const ytInfo = youtubeUrl ? getYouTubeInfo(youtubeUrl) : null;
+const resolvedImage = ytInfo ? ytInfo.thumbnailMaxRes : new URL(image, Astro.site || 'https://aigov-grc.example.com').href;
+
+// Keywords generation
+const baseKeywords = "AI Governance, AIGP, Enterprise GRC, EU AI Act, NIST AI RMF, ISO 42001, ISO 27001, SOC 2, AI Safety, Corporate Training, RKMIDIGILABS";
+const keywordsString = tags && tags.length > 0 ? `${tags.join(', ')}, ${baseKeywords}` : baseKeywords;
+
+// JSON-LD Structured Data
+const jsonLdOrg = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "RKMIDIGILABS",
+  "alternateName": "RKM DigiLabs",
+  "description": "Executive AI Governance, Enterprise GRC Advisory, and Corporate Training by RKMIDIGILABS.",
+  "url": new URL('/', Astro.site || 'https://aigov-grc.example.com').href,
+  "logo": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href,
+  "email": "rkmvedant@gmail.com",
+  "telephone": "+919371650121",
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "IN"
+  },
+  "sameAs": [
+    "https://x.com/rkmidigilabs",
+    "https://twitter.com/rkmidigilabs",
+    "https://www.linkedin.com/company/rkmidigilabs",
+    "https://www.youtube.com/@rkmidigilabs",
+    "https://www.facebook.com/rkmidigilabs",
+    "https://www.instagram.com/rkmidigilabs",
+    "https://www.reddit.com/r/compliance"
+  ],
+  "serviceType": [
+    "AI Governance Consultancy",
+    "EU AI Act High-Risk Conformity",
+    "Enterprise GRC Advisory",
+    "ISO/IEC 42001 (AIMS) Readiness",
+    "Corporate AI Safety Training"
+  ]
+};
+
+const jsonLdWebSite = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "RKMIDIGILABS",
+  "url": new URL('/', Astro.site || 'https://aigov-grc.example.com').href,
+  "publisher": {
+    "@type": "Organization",
+    "name": "RKMIDIGILABS",
+    "logo": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href
+  }
+};
+
+const jsonLdArticle = type === "article" ? {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": title,
+  "description": description,
+  "image": resolvedImage,
+  "datePublished": publishedTime || new Date().toISOString(),
+  "dateModified": publishedTime || new Date().toISOString(),
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": canonicalUrl
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "RKMIDIGILABS",
+    "url": new URL('/', Astro.site || 'https://aigov-grc.example.com').href
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "RKMIDIGILABS",
+    "logo": {
+      "@type": "ImageObject",
+      "url": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href
+    }
+  },
+  "keywords": keywordsString
+} : null;
+
+const jsonLdVideo = ytInfo ? {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": title,
+  "description": description,
+  "thumbnailUrl": [ytInfo.thumbnailMaxRes, ytInfo.thumbnailHq],
+  "uploadDate": publishedTime || new Date().toISOString(),
+  "embedUrl": ytInfo.embedUrl,
+  "contentUrl": ytInfo.watchUrl,
+  "publisher": {
+    "@type": "Organization",
+    "name": "RKMIDIGILABS",
+    "logo": {
+      "@type": "ImageObject",
+      "url": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href
+    }
+  }
+} : null;
+---
+
+<!-- Core Technical & SEO Meta Tags -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{siteTitle}</title>
+<meta name="description" content={description} />
+<meta name="keywords" content={keywordsString} />
+<meta name="author" content="RKMIDIGILABS" />
+<meta name="publisher" content="RKMIDIGILABS" />
+<link rel="canonical" href={canonicalUrl} />
+<link rel="icon" type="image/jpeg" href="/images/rkmidigilabs-logo.jpg" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+<!-- Preconnect to YouTube Media Servers for < 0.8s Video Rendering -->
+<link rel="preconnect" href="https://img.youtube.com" crossorigin />
+<link rel="dns-prefetch" href="https://img.youtube.com" />
+<link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin />
+
+<!-- OpenGraph / LinkedIn / Facebook -->
+<meta property="og:site_name" content="RKMIDIGILABS" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:type" content={type} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={resolvedImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={title} />
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{tags.map(t => <meta property="article:tag" content={t} />)}
+
+<!-- Twitter / X Meta Tags -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@rkmidigilabs" />
+<meta name="twitter:creator" content="@rkmidigilabs" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={resolvedImage} />
+<meta name="twitter:image:alt" content={title} />
+
+<!-- Structured Data (JSON-LD) for Search Engines -->
+<script type="application/ld+json" set:html={JSON.stringify(jsonLdOrg)} />
+<script type="application/ld+json" set:html={JSON.stringify(jsonLdWebSite)} />
+{jsonLdArticle && <script type="application/ld+json" set:html={JSON.stringify(jsonLdArticle)} />}
+{jsonLdVideo && <script type="application/ld+json" set:html={JSON.stringify(jsonLdVideo)} />}

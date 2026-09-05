@@ -1,0 +1,1219 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="Admin Dashboard — RKMIDIGILABS Studio" 
+  description="Manage, edit, preview, and publish blog articles and YouTube videos for RKMIDIGILABS."
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <!-- Top Bar with User Info & Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg overflow-hidden bg-white p-0.5 shadow-sm shrink-0 border border-slate-300">
+          <img src="/images/rkmidigilabs-logo.jpg" alt="RKMIDIGILABS Logo" class="w-full h-full object-contain" />
+        </div>
+        <div>
+          <h1 class="text-2xl font-black text-black tracking-tight">RKMIDIGILABS Admin Studio</h1>
+          <p class="text-xs text-slate-500 font-mono">Full Control Content Management & Publishing Hub</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Live API Server Status Badge -->
+        <a 
+          href="http://localhost:4322/api/admin/health" 
+          target="_blank"
+          title="Click to check live API health on port 4322" 
+          class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+        >
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>API 4322 Online</span>
+        </a>
+
+        <a 
+          href="/" 
+          target="_blank" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 shadow-sm transition-colors flex items-center gap-1.5"
+        >
+          <span>View Site</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        </a>
+
+        <button 
+          type="button" 
+          id="rebuild-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300 shadow-sm transition-colors flex items-center gap-1.5"
+        >
+          <svg class="w-3.5 h-3.5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Rebuild</span>
+        </button>
+
+        <button 
+          type="button" 
+          id="social-settings-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 shadow-sm transition-colors flex items-center gap-1.5"
+          title="Manage Social Media Accounts & Webhooks"
+        >
+          <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+          <span class="hidden sm:inline">Social Accounts</span>
+        </button>
+
+        <!-- Inquiries Button -->
+        <button 
+          type="button" 
+          id="inquiries-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 shadow-sm transition-colors flex items-center gap-1.5"
+          title="View Client Service Inquiries delivered to rkmvedant@gmail.com"
+        >
+          <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <span class="hidden sm:inline">Inquiries</span>
+          <span id="inquiries-count-badge" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-200 text-amber-900 font-black">0</span>
+        </button>
+
+        <a 
+          href="/admin/new" 
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-sm transition-all flex items-center gap-1.5"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>+ New Post</span>
+        </a>
+
+        <!-- Profile Button -->
+        <button 
+          type="button" 
+          id="profile-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 border border-slate-300 shadow-sm transition-colors flex items-center gap-1.5 text-slate-800"
+          title="View Administrator Profile & Organization Details"
+        >
+          <span class="w-5 h-5 rounded-full bg-[#112649] text-white flex items-center justify-center text-[10px] font-black">RK</span>
+          <span class="hidden md:inline">Profile</span>
+          <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <!-- Logout Button -->
+        <button 
+          type="button" 
+          id="logout-btn" 
+          class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-sm transition-colors flex items-center gap-1.5"
+          title="Sign Out of Admin"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <span>Log Out</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Status Banner -->
+    <div id="status-toast" class="hidden my-4 p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-xs font-bold text-emerald-800 flex items-center justify-between">
+      <span id="status-text">Action completed successfully.</span>
+      <button type="button" onclick="document.getElementById('status-toast').classList.add('hidden')" class="text-emerald-600 hover:text-emerald-950 font-black">✕</button>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-8">
+      <div class="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
+        <span class="text-xs font-mono font-bold uppercase text-slate-500">Total Articles</span>
+        <div id="stat-total" class="text-3xl font-black text-black mt-2">--</div>
+        <span class="text-[11px] text-slate-400">Total Markdown files</span>
+      </div>
+
+      <div class="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
+        <span class="text-xs font-mono font-bold uppercase text-slate-500">Live Published</span>
+        <div id="stat-published" class="text-3xl font-black text-[#16A34A] mt-2">--</div>
+        <span class="text-[11px] text-slate-400">Visible on public blog</span>
+      </div>
+
+      <div class="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
+        <span class="text-xs font-mono font-bold uppercase text-slate-500">Drafts / Unpublished</span>
+        <div id="stat-drafts" class="text-3xl font-black text-amber-600 mt-2">--</div>
+        <span class="text-[11px] text-slate-400">Hidden from public</span>
+      </div>
+
+      <div class="p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
+        <span class="text-xs font-mono font-bold uppercase text-slate-500">Video Episodes</span>
+        <div id="stat-videos" class="text-3xl font-black text-red-600 mt-2">--</div>
+        <span class="text-[11px] text-slate-400">YouTube facade embeds</span>
+      </div>
+    </div>
+
+    <!-- Posts Filter & Search -->
+    <div class="bg-white border border-slate-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div class="w-full sm:w-80 relative">
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search by title, tag, or slug..." 
+          class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+        />
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-mono text-slate-500 font-bold shrink-0">Status:</span>
+          <select 
+            id="status-filter"
+            class="px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]"
+          >
+            <option value="All">All Statuses</option>
+            <option value="Published">Published Only</option>
+            <option value="Unpublished">Unpublished (Drafts)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-mono text-slate-500 font-bold shrink-0">Category:</span>
+          <select 
+            id="category-filter"
+            class="px-3 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]"
+          >
+            <option value="All">All Categories</option>
+            <option value="AI Governance">AI Governance</option>
+            <option value="Enterprise GRC">Enterprise GRC</option>
+            <option value="Corporate Training">Corporate Training</option>
+            <option value="Regulatory Alerts">Regulatory Alerts</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 text-slate-700 uppercase font-mono tracking-wider border-b border-slate-200">
+            <tr>
+              <th class="py-3 px-4">Title & Details</th>
+              <th class="py-3 px-4">Category</th>
+              <th class="py-3 px-4">Published Date</th>
+              <th class="py-3 px-4">Format</th>
+              <th class="py-3 px-4">Publish Status</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="posts-table-body" class="divide-y divide-slate-100 font-medium">
+            <tr>
+              <td colspan="6" class="py-8 text-center text-slate-500">
+                Loading posts from RKMIDIGILABS content store...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Profile & Account Modal -->
+    <div id="profile-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-300 max-w-lg w-full overflow-hidden">
+        
+        <!-- Modal Header -->
+        <div class="bg-[#112649] p-6 text-white flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-white p-1 shrink-0 border border-slate-300">
+              <img src="/images/rkmidigilabs-logo.jpg" alt="RKMIDIGILABS Logo" class="w-full h-full object-contain" />
+            </div>
+            <div>
+              <h2 class="text-base font-black text-white">Administrator Profile</h2>
+              <p class="text-xs text-slate-300 font-mono">Organization & Account Credentials</p>
+            </div>
+          </div>
+          <button type="button" id="close-profile-btn" class="text-slate-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-4 text-xs">
+          
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono uppercase font-bold text-slate-500 text-[10px]">Organization</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Active Practice</span>
+            </div>
+            <div class="text-base font-black text-black">RKMIDIGILABS</div>
+            <div class="text-slate-600 text-[11px]">Executive AI Governance, Enterprise GRC & Masterclasses</div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg border border-slate-200 bg-white">
+              <span class="text-[10px] font-mono uppercase text-slate-500 block mb-1">Official Email</span>
+              <a href="mailto:rkmvedant@gmail.com" class="font-bold text-black hover:text-[#16A34A] block truncate">
+                rkmvedant@gmail.com
+              </a>
+            </div>
+            <div class="p-3 rounded-lg border border-slate-200 bg-white">
+              <span class="text-[10px] font-mono uppercase text-slate-500 block mb-1">Mobile / WhatsApp</span>
+              <a href="tel:+919371650121" class="font-bold text-black hover:text-[#16A34A] block">
+                +91 9371650121
+              </a>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-mono">Access Role:</span>
+              <strong class="text-black">Super Administrator (Full Master Control)</strong>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-mono">Admin API Server:</span>
+              <strong class="text-[#16A34A]">http://localhost:4322 (Healthy)</strong>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-mono">Master Passcode:</span>
+              <span class="text-slate-600 font-mono text-[11px]">Configured in .env file</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+          <button 
+            type="button" 
+            id="modal-logout-btn" 
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors flex items-center gap-1.5"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Log Out</span>
+          </button>
+
+          <button 
+            type="button" 
+            id="modal-close-btn" 
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-[#112649] hover:bg-[#1a3666] text-white shadow-sm transition-colors"
+          >
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Social Settings Modal -->
+    <div id="social-settings-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl border border-slate-300 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        
+        <div class="bg-[#112649] text-white p-5 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm tracking-tight">Connected Social Media Accounts</h3>
+              <p class="text-[11px] text-slate-300">RKMIDIGILABS Channels & Webhook Integration</p>
+            </div>
+          </div>
+          <button type="button" id="close-social-settings-btn" class="p-1 rounded text-slate-300 hover:text-white hover:bg-[#1a3666]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <form id="social-settings-form" class="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">LinkedIn Company / Profile URL</label>
+            <input type="text" id="cfg-linkedin" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="https://www.linkedin.com/company/rkmidigilabs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">X (Twitter) Profile URL / Handle</label>
+            <input type="text" id="cfg-twitter" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="https://x.com/rkmidigilabs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">YouTube Channel URL</label>
+            <input type="text" id="cfg-youtube" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="https://www.youtube.com/@rkmidigilabs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Facebook Page URL</label>
+            <input type="text" id="cfg-facebook" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="https://www.facebook.com/rkmidigilabs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">WhatsApp Business Hotline</label>
+            <input type="text" id="cfg-whatsapp" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="+91 9371650121" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Company Brochure & Profile Destination URL</label>
+            <input type="text" id="cfg-brochure" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="http://localhost:4321/company-profile" />
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-700">Automated Webhook Cross-Posting</span>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="cfg-webhook-enabled" class="rounded text-[#16A34A] focus:ring-[#16A34A]" />
+                <span class="text-[11px] font-bold text-slate-700">Enable</span>
+              </label>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-normal">
+              Provide a webhook endpoint (from Buffer, Zapier, Make, or custom API) to automatically broadcast new posts to all social media profiles.
+            </p>
+            <input type="url" id="cfg-webhook-url" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none" placeholder="https://hooks.zapier.com/hooks/catch/..." />
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" id="cancel-social-settings-btn" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white shadow-sm">
+              Save Configuration
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- Social Push / Share Modal -->
+    <div id="social-push-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl border border-slate-300 shadow-2xl max-w-xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        
+        <div class="bg-[#112649] text-white p-5 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-[#16A34A] flex items-center justify-center text-white font-bold">
+              🚀
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm tracking-tight">Social Media Broadcast & Push</h3>
+              <p class="text-[11px] text-slate-300">Share to LinkedIn, X, Facebook & WhatsApp</p>
+            </div>
+          </div>
+          <button type="button" id="close-social-push-btn" class="p-1 rounded text-slate-300 hover:text-white hover:bg-[#1a3666]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+          
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="text-[10px] font-mono font-bold uppercase text-slate-500 block mb-1">Target Article</span>
+            <div id="push-post-title" class="font-bold text-black text-sm">--</div>
+            <div id="push-post-url" class="text-[11px] text-slate-500 font-mono mt-0.5">--</div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Broadcast Copy / Ad Teaser & Hashtags</label>
+            <textarea id="push-copy" rows="4" class="w-full p-3 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#16A34A] focus:outline-none"></textarea>
+            <span class="text-[10px] text-slate-500">Includes article link, corporate capability brochure URL, and official hashtags.</span>
+          </div>
+
+          <!-- 1-Click Platform Intent Buttons -->
+          <div>
+            <span class="font-bold text-slate-700 block mb-2">⚡ 1-Click Direct Browser Push (No API Keys Needed)</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button type="button" id="btn-push-linkedin" class="p-2.5 rounded-lg bg-[#0077B5] hover:bg-[#005f93] text-white font-bold text-xs flex flex-col items-center gap-1 shadow-sm transition-transform active:scale-95">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.67a1.66 1.66 0 1 0 1.66 1.66 1.67 1.67 0 0 0-1.66-1.66z"/></svg>
+                <span>LinkedIn</span>
+              </button>
+
+              <button type="button" id="btn-push-twitter" class="p-2.5 rounded-lg bg-black hover:bg-slate-800 text-white font-bold text-xs flex flex-col items-center gap-1 shadow-sm transition-transform active:scale-95">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                <span>X (Twitter)</span>
+              </button>
+
+              <button type="button" id="btn-push-whatsapp" class="p-2.5 rounded-lg bg-[#25D366] hover:bg-[#1ebc59] text-white font-bold text-xs flex flex-col items-center gap-1 shadow-sm transition-transform active:scale-95">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                <span>WhatsApp</span>
+              </button>
+
+              <button type="button" id="btn-push-facebook" class="p-2.5 rounded-lg bg-[#1877F2] hover:bg-[#0c65d8] text-white font-bold text-xs flex flex-col items-center gap-1 shadow-sm transition-transform active:scale-95">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                <span>Facebook</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Multi & Webhook Actions -->
+          <div class="pt-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button type="button" id="btn-push-all" class="w-full sm:w-auto px-4 py-2.5 rounded-lg font-bold text-xs bg-[#16A34A] hover:bg-[#15803D] text-white shadow-sm flex items-center justify-center gap-1.5">
+              <span>🚀 1-Click Launch All Channels</span>
+            </button>
+
+            <button type="button" id="btn-push-webhook" class="w-full sm:w-auto px-4 py-2.5 rounded-lg font-bold text-xs bg-[#112649] hover:bg-[#1a3666] text-white shadow-sm flex items-center justify-center gap-1.5">
+              <span>📡 Dispatch to Webhook API</span>
+            </button>
+          </div>
+
+          <div id="push-status-note" class="hidden p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono"></div>
+
+        </div>
+
+    <!-- Inquiries Modal -->
+    <div id="inquiries-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl border border-slate-300 shadow-2xl max-w-4xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
+        
+        <!-- Header -->
+        <div class="bg-[#112649] text-white p-5 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-white font-bold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm tracking-tight">Client Service Inquiries</h3>
+              <p class="text-[11px] text-slate-300">Delivered directly to rkmvedant@gmail.com & archived locally</p>
+            </div>
+          </div>
+          <button type="button" id="close-inquiries-btn" class="p-1 rounded text-slate-300 hover:text-white hover:bg-[#1a3666]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Inquiries Table / Container -->
+        <div class="p-6 overflow-y-auto flex-1">
+          <div id="inquiries-list-container">
+            <p class="text-xs text-slate-500">Loading inquiries...</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex items-center justify-between shrink-0">
+          <span class="text-[11px] text-slate-500 font-mono">Inbox: rkmvedant@gmail.com • Hotline: +91 9371650121</span>
+          <button type="button" id="done-inquiries-btn" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#112649] text-white hover:bg-[#1a3666]">
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Email Template Viewer Modal -->
+    <div id="template-viewer-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl border border-slate-300 shadow-2xl max-w-3xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+        <div class="bg-[#112649] text-white p-4 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-bold bg-emerald-700 px-2 py-0.5 rounded">EMAIL TEMPLATE ARCHIVE</span>
+            <span id="template-viewer-ref" class="text-xs font-mono text-slate-300">--</span>
+          </div>
+          <button type="button" id="close-template-viewer-btn" class="p-1 rounded text-slate-300 hover:text-white hover:bg-[#1a3666]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="flex-1 p-4 overflow-y-auto bg-slate-100">
+          <div id="template-viewer-content" class="bg-white rounded-xl shadow-xs overflow-hidden border border-slate-200"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  const API_PORT = 4322;
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? `http://${window.location.hostname}:${API_PORT}` 
+    : window.location.origin;
+
+  const token = sessionStorage.getItem('rkmidigi_admin_token');
+  if (!token) {
+    window.location.href = '/admin/login';
+  }
+
+  // Logout
+  function handleLogout() {
+    sessionStorage.removeItem('rkmidigi_admin_token');
+    sessionStorage.removeItem('rkmidigi_admin_user');
+    window.location.href = '/admin/login?logged_out=1';
+  }
+
+  const logoutBtn = document.getElementById('logout-btn');
+  const modalLogoutBtn = document.getElementById('modal-logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+  if (modalLogoutBtn) modalLogoutBtn.addEventListener('click', handleLogout);
+
+  // Profile modal toggle
+  const profileBtn = document.getElementById('profile-btn');
+  const profileModal = document.getElementById('profile-modal');
+  const closeProfileBtn = document.getElementById('close-profile-btn');
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+
+  function openProfile() { if (profileModal) profileModal.classList.remove('hidden'); }
+  function closeProfile() { if (profileModal) profileModal.classList.add('hidden'); }
+
+  if (profileBtn) profileBtn.addEventListener('click', openProfile);
+  if (closeProfileBtn) closeProfileBtn.addEventListener('click', closeProfile);
+  if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeProfile);
+  if (profileModal) {
+    profileModal.addEventListener('click', (e) => {
+      if (e.target === profileModal) closeProfile();
+    });
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeProfile();
+  });
+
+  let allPosts: any[] = [];
+
+  function showToast(message: string, isError = false) {
+    const toast = document.getElementById('status-toast');
+    const text = document.getElementById('status-text');
+    if (toast && text) {
+      text.textContent = message;
+      toast.className = `my-4 p-3 rounded-lg border text-xs font-bold flex items-center justify-between ${
+        isError ? 'bg-red-50 border-red-300 text-red-800' : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+      }`;
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+    }
+  }
+
+  async function fetchPosts() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/posts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.status === 401) {
+        sessionStorage.removeItem('rkmidigi_admin_token');
+        window.location.href = '/admin/login';
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        allPosts = data.posts || [];
+        updateStats(allPosts);
+        renderPosts(allPosts);
+      } else {
+        showToast(data.error || 'Failed to fetch posts', true);
+      }
+    } catch (err) {
+      showToast('Could not reach Admin API server on port 4322.', true);
+    }
+  }
+
+  function updateStats(posts: any[]) {
+    const totalEl = document.getElementById('stat-total');
+    const publishedEl = document.getElementById('stat-published');
+    const draftsEl = document.getElementById('stat-drafts');
+    const videosEl = document.getElementById('stat-videos');
+
+    if (totalEl) totalEl.textContent = posts.length.toString();
+    if (publishedEl) publishedEl.textContent = posts.filter(p => p.published !== false).length.toString();
+    if (draftsEl) draftsEl.textContent = posts.filter(p => p.published === false).length.toString();
+    if (videosEl) videosEl.textContent = posts.filter(p => !!p.youtubeUrl).length.toString();
+  }
+
+  function renderPosts(posts: any[]) {
+    const tbody = document.getElementById('posts-table-body');
+    if (!tbody) return;
+
+    if (posts.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="py-12 text-center text-slate-500">
+            <p class="text-sm font-bold text-slate-700">No blog posts found.</p>
+            <p class="text-xs text-slate-400 mt-1">Click "+ New Post / Video" above to create your first article.</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = posts.map(post => {
+      const hasVideo = !!post.youtubeUrl;
+      const isFeatured = post.featured;
+      const isPublished = post.published !== false;
+
+      return `
+        <tr class="hover:bg-slate-50/80 transition-colors">
+          <td class="py-3.5 px-4">
+            <div class="flex items-center gap-2.5">
+              ${isFeatured ? `<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">FEATURED</span>` : ''}
+              ${!isPublished ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold uppercase tracking-wider">DRAFT</span>` : ''}
+              <a href="/admin/edit?slug=${encodeURIComponent(post.slug)}" class="font-bold text-black hover:text-[#16A34A] transition-colors leading-snug">
+                ${post.title}
+              </a>
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono mt-1">
+              Slug: /blog/${post.slug} • ${post.readTime || '4 min read'}
+            </div>
+          </td>
+
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-300">
+              ${post.category}
+            </span>
+          </td>
+
+          <td class="py-3.5 px-4 whitespace-nowrap text-slate-600 font-mono text-xs">
+            ${post.date || 'N/A'}
+          </td>
+
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            ${hasVideo ? `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
+                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                VIDEO
+              </span>
+            ` : `
+              <span class="text-[11px] text-slate-400 font-mono">Article Only</span>
+            `}
+          </td>
+
+          <!-- Single Publish / Unpublish Toggle Button -->
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <button 
+              type="button" 
+              onclick="togglePublishPost('${post.slug}', this)"
+              id="pub-btn-${post.slug}"
+              class="publish-toggle-btn inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
+                isPublished 
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-amber-100 hover:text-amber-900 hover:border-amber-300' 
+                  : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-emerald-100 hover:text-emerald-800 hover:border-emerald-300'
+              }"
+              title="${isPublished ? 'Status: Published. Click to Unpublish (set to Draft)' : 'Status: Unpublished. Click to Publish (make Live)'}"
+            >
+              <span class="w-2 h-2 rounded-full ${isPublished ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+              <span class="btn-label">${isPublished ? 'Published' : 'Unpublished'}</span>
+            </button>
+          </td>
+
+          <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
+            <button 
+              type="button" 
+              onclick="openSocialPushModal('${post.slug}')"
+              class="inline-block px-2.5 py-1 rounded bg-[#112649] hover:bg-[#1d3d75] text-white font-bold text-xs transition-colors shadow-xs"
+              title="Broadcast & Push to Social Media"
+            >
+              🚀 Push
+            </button>
+            <a 
+              href="/admin/edit?slug=${encodeURIComponent(post.slug)}" 
+              class="inline-block px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
+            >
+              Edit
+            </a>
+            <a 
+              href="/blog/${post.slug}" 
+              target="_blank" 
+              class="inline-block px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
+            >
+              View ↗
+            </a>
+            <button 
+              type="button" 
+              onclick="deletePost('${post.slug}', '${post.title.replace(/'/g, "\\'")}')"
+              class="inline-block px-2.5 py-1 rounded text-red-600 hover:bg-red-50 hover:text-red-800 font-bold text-xs transition-colors"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Toggle Publish Status
+  async function togglePublishPost(slug: string, btn?: HTMLElement) {
+    const post = allPosts.find(p => p.slug === slug);
+    if (!post) return;
+
+    if (btn) {
+      btn.classList.add('opacity-50', 'pointer-events-none');
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/posts/${slug}/toggle-publish`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        post.published = data.published;
+        updateStats(allPosts);
+
+        if (btn) {
+          const isPub = data.published;
+          btn.className = `publish-toggle-btn inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
+            isPub 
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-amber-100 hover:text-amber-900 hover:border-amber-300' 
+              : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-emerald-100 hover:text-emerald-800 hover:border-emerald-300'
+          }`;
+          btn.title = isPub 
+            ? 'Status: Published. Click to Unpublish (set to Draft)' 
+            : 'Status: Unpublished. Click to Publish (make Live)';
+          btn.innerHTML = `<span class="w-2 h-2 rounded-full ${isPub ? 'bg-emerald-500' : 'bg-amber-500'}"></span><span class="btn-label">${isPub ? 'Published' : 'Unpublished'}</span>`;
+        }
+
+        showToast(data.message || (data.published ? 'Post published!' : 'Post unpublished (draft)!'));
+        applyFilter();
+
+        // Broadcast to blog page and other tabs
+        try {
+          const bc = new BroadcastChannel('rkmidigi_blog_channel');
+          bc.postMessage({ type: 'POST_PUBLISH_TOGGLED', slug, published: data.published, timestamp: Date.now() });
+        } catch(e) {}
+        try {
+          localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, published: data.published, timestamp: Date.now() }));
+        } catch(e) {}
+      } else {
+        showToast(data.error || 'Failed to toggle publish status.', true);
+      }
+    } catch (err) {
+      showToast('Network error while toggling publish status.', true);
+    } finally {
+      if (btn) {
+        btn.classList.remove('opacity-50', 'pointer-events-none');
+      }
+    }
+  }
+
+  (window as any).togglePublishPost = togglePublishPost;
+
+  // Delete post
+  (window as any).deletePost = async (slug: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete the post "${title}"?\n\nThis will permanently remove the Markdown file from src/content/blog/${slug}.md.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Post "${slug}" was deleted.`);
+        fetchPosts();
+
+        // Broadcast deletion
+        try {
+          const bc = new BroadcastChannel('rkmidigi_blog_channel');
+          bc.postMessage({ type: 'POST_DELETED', slug, timestamp: Date.now() });
+        } catch(e) {}
+        try {
+          localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, deleted: true, timestamp: Date.now() }));
+        } catch(e) {}
+      } else {
+        showToast(data.error || 'Failed to delete post.', true);
+      }
+    } catch (err) {
+      showToast('Network error while deleting post.', true);
+    }
+  };
+
+  // Rebuild Trigger
+  const rebuildBtn = document.getElementById('rebuild-btn');
+  if (rebuildBtn) {
+    rebuildBtn.addEventListener('click', async () => {
+      rebuildBtn.setAttribute('disabled', 'true');
+      rebuildBtn.innerHTML = `<span>Rebuilding...</span>`;
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/rebuild`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Site rebuild completed successfully!');
+        } else {
+          showToast(data.error || 'Rebuild failed.', true);
+        }
+      } catch (err) {
+        showToast('Network error triggering rebuild.', true);
+      } finally {
+        rebuildBtn.removeAttribute('disabled');
+        rebuildBtn.innerHTML = `<svg class="w-3.5 h-3.5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Rebuild Site</span>`;
+      }
+    });
+  }
+
+  // Filter & Search
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const categoryFilter = document.getElementById('category-filter') as HTMLSelectElement;
+  const statusFilter = document.getElementById('status-filter') as HTMLSelectElement;
+
+  function applyFilter() {
+    const q = (searchInput?.value || '').toLowerCase().trim();
+    const cat = categoryFilter?.value || 'All';
+    const st = statusFilter?.value || 'All';
+
+    const filtered = allPosts.filter(p => {
+      const matchesSearch = !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q) || (p.tags && p.tags.some((t: string) => t.toLowerCase().includes(q)));
+      const matchesCat = cat === 'All' || p.category === cat;
+      const isPub = p.published !== false;
+      const matchesStatus = st === 'All' || (st === 'Published' && isPub) || (st === 'Unpublished' && !isPub);
+      return matchesSearch && matchesCat && matchesStatus;
+    });
+
+    renderPosts(filtered);
+  }
+
+  if (searchInput) searchInput.addEventListener('input', applyFilter);
+  if (categoryFilter) categoryFilter.addEventListener('change', applyFilter);
+  if (statusFilter) statusFilter.addEventListener('change', applyFilter);
+
+  // --- Social Settings Modal Logic ---
+  const socialSettingsBtn = document.getElementById('social-settings-btn');
+  const socialSettingsModal = document.getElementById('social-settings-modal');
+  const closeSocialSettingsBtn = document.getElementById('close-social-settings-btn');
+  const cancelSocialSettingsBtn = document.getElementById('cancel-social-settings-btn');
+  const socialSettingsForm = document.getElementById('social-settings-form');
+
+  async function loadSocialConfig() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/social-config`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.config) {
+        const c = data.config;
+        const channels = c.channels || {};
+        const lIn = document.getElementById('cfg-linkedin') as HTMLInputElement;
+        const twIn = document.getElementById('cfg-twitter') as HTMLInputElement;
+        const ytIn = document.getElementById('cfg-youtube') as HTMLInputElement;
+        const fbIn = document.getElementById('cfg-facebook') as HTMLInputElement;
+        const waIn = document.getElementById('cfg-whatsapp') as HTMLInputElement;
+        const brIn = document.getElementById('cfg-brochure') as HTMLInputElement;
+        const whEn = document.getElementById('cfg-webhook-enabled') as HTMLInputElement;
+        const whUrl = document.getElementById('cfg-webhook-url') as HTMLInputElement;
+
+        if (lIn) lIn.value = channels.linkedin?.url || 'https://www.linkedin.com/company/rkmidigilabs';
+        if (twIn) twIn.value = channels.twitter?.url || 'https://x.com/rkmidigilabs';
+        if (ytIn) ytIn.value = channels.youtube?.url || 'https://www.youtube.com/@rkmidigilabs';
+        if (fbIn) fbIn.value = channels.facebook?.url || 'https://www.facebook.com/rkmidigilabs';
+        if (waIn) waIn.value = channels.whatsapp?.handle || '+91 9371650121';
+        if (brIn) brIn.value = c.brochureUrl || `${window.location.origin}/company-profile`;
+        if (whEn) whEn.checked = !!c.webhooks?.enabled;
+        if (whUrl) whUrl.value = c.webhooks?.webhookUrl || '';
+      }
+    } catch (e) {}
+  }
+
+  function openSocialSettings() {
+    loadSocialConfig();
+    socialSettingsModal?.classList.remove('hidden');
+  }
+  function closeSocialSettings() {
+    socialSettingsModal?.classList.add('hidden');
+  }
+
+  socialSettingsBtn?.addEventListener('click', openSocialSettings);
+  closeSocialSettingsBtn?.addEventListener('click', closeSocialSettings);
+  cancelSocialSettingsBtn?.addEventListener('click', closeSocialSettings);
+
+  socialSettingsForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      organization: 'RKMIDIGILABS',
+      email: 'rkmvedant@gmail.com',
+      mobile: '+91 9371650121',
+      brochureUrl: (document.getElementById('cfg-brochure') as HTMLInputElement).value,
+      channels: {
+        linkedin: { name: 'LinkedIn', url: (document.getElementById('cfg-linkedin') as HTMLInputElement).value, active: true },
+        twitter: { name: 'X (Twitter)', url: (document.getElementById('cfg-twitter') as HTMLInputElement).value, active: true },
+        youtube: { name: 'YouTube', url: (document.getElementById('cfg-youtube') as HTMLInputElement).value, active: true },
+        facebook: { name: 'Facebook', url: (document.getElementById('cfg-facebook') as HTMLInputElement).value, active: true },
+        whatsapp: { name: 'WhatsApp', handle: (document.getElementById('cfg-whatsapp') as HTMLInputElement).value, active: true }
+      },
+      webhooks: {
+        enabled: (document.getElementById('cfg-webhook-enabled') as HTMLInputElement).checked,
+        webhookUrl: (document.getElementById('cfg-webhook-url') as HTMLInputElement).value
+      }
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/social-config`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        showToast('Social accounts and webhook settings saved!');
+        closeSocialSettings();
+      } else {
+        showToast(resData.error || 'Failed to save social settings', true);
+      }
+    } catch (err) {
+      showToast('Error connecting to Admin API server.', true);
+    }
+  });
+
+  // --- Social Push Modal Logic ---
+  const socialPushModal = document.getElementById('social-push-modal');
+  const closeSocialPushBtn = document.getElementById('close-social-push-btn');
+  let currentPushPost: any = null;
+
+  (window as any).openSocialPushModal = (slug: string) => {
+    const post = allPosts.find(p => p.slug === slug);
+    if (!post) return;
+    currentPushPost = post;
+
+    const titleEl = document.getElementById('push-post-title');
+    const urlEl = document.getElementById('push-post-url');
+    const copyEl = document.getElementById('push-copy') as HTMLTextAreaElement;
+    const noteEl = document.getElementById('push-status-note');
+
+    if (noteEl) noteEl.classList.add('hidden');
+    if (titleEl) titleEl.textContent = post.title;
+    
+    const articleUrl = `${window.location.origin}/blog/${post.slug}`;
+    const brochureUrl = `${window.location.origin}/company-profile`;
+    if (urlEl) urlEl.textContent = articleUrl;
+
+    const tags = Array.isArray(post.tags) ? post.tags.map((t: string) => '#' + t.replace(/\s+/g, '')).join(' ') : '#AIGovernance #RKMIDIGILABS';
+    const copy = `📢 ${post.title}\n\n${post.summary || ''}\n\n📖 Read full analysis: ${articleUrl}\n🏢 Company Profile & Corporate Brochure: ${brochureUrl}\n\n${tags}`;
+    if (copyEl) copyEl.value = copy;
+
+    socialPushModal?.classList.remove('hidden');
+  };
+
+  function closeSocialPush() {
+    socialPushModal?.classList.add('hidden');
+  }
+  closeSocialPushBtn?.addEventListener('click', closeSocialPush);
+
+  function getPushCopy(): string {
+    return (document.getElementById('push-copy') as HTMLTextAreaElement)?.value || '';
+  }
+
+  // 1-Click Launchers
+  document.getElementById('btn-push-linkedin')?.addEventListener('click', () => {
+    if (!currentPushPost) return;
+    const url = `${window.location.origin}/blog/${currentPushPost.slug}`;
+    const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+    window.open(shareUrl, '_blank', 'width=600,height=600');
+  });
+
+  document.getElementById('btn-push-twitter')?.addEventListener('click', () => {
+    if (!currentPushPost) return;
+    const text = getPushCopy();
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, '_blank', 'width=600,height=600');
+  });
+
+  document.getElementById('btn-push-whatsapp')?.addEventListener('click', () => {
+    if (!currentPushPost) return;
+    const text = getPushCopy();
+    const shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, '_blank', 'width=800,height=700');
+  });
+
+  document.getElementById('btn-push-facebook')?.addEventListener('click', () => {
+    if (!currentPushPost) return;
+    const url = `${window.location.origin}/blog/${currentPushPost.slug}`;
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(shareUrl, '_blank', 'width=600,height=600');
+  });
+
+  // Launch All Selected
+  document.getElementById('btn-push-all')?.addEventListener('click', () => {
+    if (!currentPushPost) return;
+    const text = getPushCopy();
+    const url = `${window.location.origin}/blog/${currentPushPost.slug}`;
+
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    
+    showToast('Launched LinkedIn, X, WhatsApp, and Facebook share composers!');
+  });
+
+  // Webhook Dispatch
+  document.getElementById('btn-push-webhook')?.addEventListener('click', async () => {
+    if (!currentPushPost) return;
+    const btn = document.getElementById('btn-push-webhook') as HTMLButtonElement;
+    const note = document.getElementById('push-status-note');
+    btn.disabled = true;
+    btn.textContent = 'Dispatching...';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/social-push`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: currentPushPost.title,
+          summary: currentPushPost.summary,
+          url: `/blog/${currentPushPost.slug}`,
+          customCopy: getPushCopy(),
+          tags: currentPushPost.tags
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Social broadcast dispatched & logged successfully!');
+        if (note) {
+          note.className = 'p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-mono';
+          note.textContent = `✓ Broadcast recorded (ID: ${data.dispatchRecord?.id}). Webhook status: ${data.webhookStatus}.`;
+          note.classList.remove('hidden');
+        }
+      } else {
+        showToast(data.error || 'Failed to dispatch broadcast', true);
+      }
+    } catch (e: any) {
+      showToast('Error dispatching social broadcast.', true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<span>📡 Dispatch to Webhook API</span>`;
+    }
+  });
+
+  // --- Inquiries Management Logic ---
+  const inquiriesBtn = document.getElementById('inquiries-btn');
+  const inquiriesModal = document.getElementById('inquiries-modal');
+  const closeInquiriesBtn = document.getElementById('close-inquiries-btn');
+  const doneInquiriesBtn = document.getElementById('done-inquiries-btn');
+  const inquiriesCountBadge = document.getElementById('inquiries-count-badge');
+  const inquiriesContainer = document.getElementById('inquiries-list-container');
+
+  const templateViewerModal = document.getElementById('template-viewer-modal');
+  const closeTemplateViewerBtn = document.getElementById('close-template-viewer-btn');
+  const templateViewerRef = document.getElementById('template-viewer-ref');
+  const templateViewerContent = document.getElementById('template-viewer-content');
+
+  let allInquiries: any[] = [];
+
+  async function fetchInquiries() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/inquiries`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        allInquiries = data.inquiries || [];
+        if (inquiriesCountBadge) {
+          inquiriesCountBadge.textContent = allInquiries.length.toString();
+        }
+        renderInquiries(allInquiries);
+      }
+    } catch (e) {
+      console.error('Error fetching inquiries:', e);
+    }
+  }
+
+  function renderInquiries(inquiries: any[]) {
+    if (!inquiriesContainer) return;
+    if (inquiries.length === 0) {
+      inquiriesContainer.innerHTML = `
+        <div class="py-12 text-center text-slate-500">
+          <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <p class="text-sm font-bold text-slate-700">No client inquiries yet.</p>
+          <p class="text-xs text-slate-400 mt-1">When prospective clients click "Enquire with Email" on your services, their submissions will be delivered to rkmvedant@gmail.com and cataloged here.</p>
+        </div>
+      `;
+      return;
+    }
+
+    inquiriesContainer.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
+          <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+            <tr>
+              <th class="py-3 px-4">Ref & Date</th>
+              <th class="py-3 px-4">Client Contact</th>
+              <th class="py-3 px-4">Service Offering</th>
+              <th class="py-3 px-4">Requirements</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            ${inquiries.map(inq => {
+              const d = inq.timestamp ? new Date(inq.timestamp).toLocaleDateString() : 'Recent';
+              return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="py-3.5 px-4 whitespace-nowrap font-mono text-[11px]">
+                    <div class="font-bold text-black">${inq.inquiryId}</div>
+                    <div class="text-slate-400">${d}</div>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <div class="font-bold text-black">${inq.name}</div>
+                    <div class="text-[11px] text-slate-500 font-mono">
+                      <a href="mailto:${inq.email}" class="hover:underline text-emerald-700">${inq.email}</a>
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-mono">${inq.phone}</div>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      ${inq.service}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-4 text-slate-700 max-w-xs truncate" title="${inq.description}">
+                    ${inq.description}
+                  </td>
+                  <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
+                    <button 
+                      type="button" 
+                      onclick="window.viewInquiryTemplate('${inq.inquiryId}')"
+                      class="px-2.5 py-1 rounded bg-[#112649] hover:bg-[#1d3d75] text-white font-bold text-[11px] transition-colors shadow-xs"
+                      title="Preview Corporate Email Template"
+                    >
+                      View Template
+                    </button>
+                    <a 
+                      href="mailto:${inq.email}?subject=${encodeURIComponent(`Re: RKMIDIGILABS Inquiry - ${inq.service}`)}"
+                      class="inline-block px-2.5 py-1 rounded bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-[11px] transition-colors shadow-xs"
+                      title="Reply via Email"
+                    >
+                      Reply
+                    </a>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  async function openTemplateViewer(inqId: string) {
+    if (!templateViewerModal || !templateViewerContent) return;
+    if (templateViewerRef) templateViewerRef.textContent = inqId;
+    templateViewerContent.innerHTML = '<div class="p-8 text-center text-xs text-slate-500">Loading formatted email template...</div>';
+    templateViewerModal.classList.remove('hidden');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/inquiries/${inqId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.html) {
+        templateViewerContent.innerHTML = data.html;
+      } else {
+        templateViewerContent.innerHTML = `<div class="p-8 text-center text-xs text-red-500">${data.error || 'Failed to load template.'}</div>`;
+      }
+    } catch (e) {
+      templateViewerContent.innerHTML = '<div class="p-8 text-center text-xs text-red-500">Error loading email template archive.</div>';
+    }
+  }
+
+  (window as any).viewInquiryTemplate = openTemplateViewer;
+
+  function openInquiriesModal() {
+    fetchInquiries();
+    inquiriesModal?.classList.remove('hidden');
+  }
+  function closeInquiriesModal() {
+    inquiriesModal?.classList.add('hidden');
+  }
+
+  inquiriesBtn?.addEventListener('click', openInquiriesModal);
+  closeInquiriesBtn?.addEventListener('click', closeInquiriesModal);
+  doneInquiriesBtn?.addEventListener('click', closeInquiriesModal);
+
+  closeTemplateViewerBtn?.addEventListener('click', () => {
+    templateViewerModal?.classList.add('hidden');
+  });
+
+  // Background fetch of inquiries count
+  fetchInquiries();
+
+  // Initial fetch
+  fetchPosts();
+</script>
+</BaseLayout>

@@ -1,0 +1,51 @@
+{
+  "organization": "RKMIDIGILABS",
+  "email": "rkmvedant@gmail.com",
+  "mobile": "+91 9371650121",
+  "brochureUrl": "http://localhost:4321/company-profile",
+  "channels": {
+    "linkedin": {
+      "name": "LinkedIn",
+      "handle": "RKMIDIGILABS",
+      "url": "https://www.linkedin.com/company/rkmidigilabs",
+      "active": true
+    },
+    "twitter": {
+      "name": "X (Twitter)",
+      "handle": "@rkmidigilabs",
+      "url": "https://x.com/rkmidigilabs",
+      "active": true
+    },
+    "youtube": {
+      "name": "YouTube",
+      "handle": "@rkmidigilabs",
+      "url": "https://www.youtube.com/@rkmidigilabs",
+      "active": true
+    },
+    "facebook": {
+      "name": "Facebook",
+      "handle": "rkmidigilabs",
+      "url": "https://www.facebook.com/rkmidigilabs",
+      "active": true
+    },
+    "whatsapp": {
+      "name": "WhatsApp Business",
+      "handle": "+91 9371650121",
+      "url": "https://wa.me/919371650121",
+      "active": true
+    }
+  },
+  "webhooks": {
+    "enabled": false,
+    "service": "Buffer / Zapier / Make",
+    "webhookUrl": ""
+  },
+  "defaultHashtags": [
+    "#AIGovernance",
+    "#EUAIAct",
+    "#ISO42001",
+    "#NISTAIFramework",
+    "#EnterpriseGRC",
+    "#RKMIDIGILABS"
+  ]
+}

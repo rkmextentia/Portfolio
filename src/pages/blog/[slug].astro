@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map(post => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const isDraft = post.data.published === false;
+---
+
+<PostLayout post={post}>
+  <!-- Real-time Draft Notice -->
+  <div id="draft-notice" class={`mb-6 p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono font-bold flex items-center justify-between shadow-xs ${isDraft ? '' : 'hidden'}`}>
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+      <span>UNPUBLISHED ARTICLE / DRAFT PREVIEW</span>
+    </div>
+    <span class="text-[11px] text-amber-700">Hidden from public blog directory & RSS feeds</span>
+  </div>
+
+  <div id="article-content">
+    <Content />
+  </div>
+
+  <script is:inline define:vars={{ slug: post.slug }}>
+    (function() {
+      var API_BASE = 'http://localhost:4322';
+
+      async function checkLiveStatus() {
+        try {
+          var res = await fetch(API_BASE + '/api/public/posts/' + slug + '?_t=' + Date.now());
+          if (!res.ok) return;
+          var data = await res.json();
+          if (data.success) {
+            var draftNotice = document.getElementById('draft-notice');
+            if (draftNotice) {
+              if (data.published === false) {
+                draftNotice.classList.remove('hidden');
+              } else {
+                draftNotice.classList.add('hidden');
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
+      checkLiveStatus();
+      try {
+        var bc = new BroadcastChannel('rkmidigi_blog_channel');
+        bc.onmessage = function() { checkLiveStatus(); };
+      } catch(e) {}
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'rkmidigi_post_toggle') checkLiveStatus();
+      });
+      window.addEventListener('focus', checkLiveStatus);
+    })();
+  </script>
+</PostLayout>

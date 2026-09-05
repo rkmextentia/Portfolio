@@ -1,0 +1,38 @@
+[
+  {
+    "inquiryId": "RKM-INQ-1788605616324",
+    "timestamp": "2026-09-05T10:53:36.324Z",
+    "name": "Vikram Mehta (Chief Risk Officer)",
+    "email": "vikram.mehta@globalfin.org",
+    "phone": "+91 91234 56789",
+    "service": "Enterprise GRC Advisory",
+    "description": "We require an ISO 27001:2022 to ISO 42001 cross-mapping and SOC 2 Type II audit remediation roadmap for our cloud-hosted LLM deployment.",
+    "status": "received",
+    "recipient": "rkmvedant@gmail.com",
+    "subject": "[RKMIDIGILABS Inquiry] Enterprise GRC Advisory - Vikram Mehta (Chief Risk Officer) (+91 91234 56789)"
+  },
+  {
+    "inquiryId": "RKM-INQ-1788605456919",
+    "timestamp": "2026-09-05T10:50:56.919Z",
+    "name": "Vikram Mehta (Chief Risk Officer)",
+    "email": "vikram.mehta@globalfin.org",
+    "phone": "+91 91234 56789",
+    "service": "Enterprise GRC Advisory",
+    "description": "We require an ISO 27001:2022 to ISO 42001 cross-mapping and SOC 2 Type II audit remediation roadmap for our cloud-hosted LLM deployment.",
+    "status": "received",
+    "recipient": "rkmvedant@gmail.com",
+    "subject": "[RKMIDIGILABS Inquiry] Enterprise GRC Advisory - Vikram Mehta (Chief Risk Officer) (+91 91234 56789)"
+  },
+  {
+    "inquiryId": "RKM-INQ-1788605236375",
+    "timestamp": "2026-09-05T10:47:16.375Z",
+    "name": "Dr. Anand Kumar",
+    "email": "anand.kumar@enterprise-health.com",
+    "phone": "+91 9845012345",
+    "service": "AI Governance Consultancy",
+    "description": "We are deploying a clinical decision support LLM in multi-specialty hospitals and need an end-to-end EU AI Act Annex III conformity audit and NIST AI RMF mapping.",
+    "status": "received",
+    "recipient": "rkmvedant@gmail.com",
+    "subject": "[RKMIDIGILABS Inquiry] AI Governance Consultancy - Dr. Anand Kumar (+91 9845012345)"
+  }
+]

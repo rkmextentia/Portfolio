@@ -1,0 +1,31 @@
+---
+interface Props {
+  show?: boolean;
+  message?: string;
+  badge?: string;
+  linkText?: string;
+  linkHref?: string;
+}
+
+const {
+  show = true,
+  badge = "RKMIDIGILABS ADVISORY",
+  message = "Enterprise AI Governance & EU AI Act Training Cohorts Now Open",
+  linkText = "Inquire for Team Details →",
+  linkHref = "/services#training"
+} = Astro.props;
+---
+
+{show && (
+  <div class="bg-[#0b1a33] text-white text-xs sm:text-sm py-2 px-4 border-b border-[#1c3968]">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-2 text-center">
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-slate-700 text-slate-100 border border-slate-600">
+        {badge}
+      </span>
+      <span class="text-slate-200">{message}</span>
+      <a href={linkHref} class="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 ml-1 transition-colors">
+        {linkText}
+      </a>
+    </div>
+  </div>
+)}

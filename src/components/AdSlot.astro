@@ -1,0 +1,28 @@
+---
+interface Props {
+  format?: "leaderboard" | "in-article" | "sidebar";
+  sponsorText?: string;
+  sponsorLink?: string;
+  class?: string;
+}
+
+const {
+  sponsorText = "Sponsor: Executive AI Compliance & Risk Masterclass — Inquire for Corporate Access",
+  sponsorLink = "/services",
+  class: className = ""
+} = Astro.props;
+---
+
+<div class={`ad-slot my-8 p-4 rounded-lg border border-slate-200 bg-slate-50 text-center ${className}`}>
+  <div class="text-[10px] uppercase font-mono tracking-widest text-slate-400 mb-1">
+    CORPORATE SPONSORSHIP / PARTNER
+  </div>
+  <a 
+    href={sponsorLink} 
+    class="block group hover:text-blue-700 transition-colors"
+  >
+    <div class="text-xs sm:text-sm font-semibold text-slate-700 group-hover:text-blue-700">
+      {sponsorText} →
+    </div>
+  </a>
+</div>

@@ -1,0 +1,40 @@
+---
+interface Props {
+  type?: "alert" | "standard" | "action";
+  title?: string;
+}
+
+const { type = "standard", title } = Astro.props;
+
+const config = {
+  alert: {
+    border: "border-red-300",
+    bg: "bg-red-50",
+    badge: "bg-red-100 text-red-800",
+    defaultTitle: "Compliance Notice",
+  },
+  standard: {
+    border: "border-blue-200",
+    bg: "bg-blue-50/60",
+    badge: "bg-blue-100 text-blue-900",
+    defaultTitle: "Regulatory Citation",
+  },
+  action: {
+    border: "border-slate-300",
+    bg: "bg-slate-50",
+    badge: "bg-slate-200 text-slate-800",
+    defaultTitle: "Action Item",
+  },
+};
+
+const current = config[type];
+---
+
+<div class={`my-6 p-4 sm:p-5 rounded-lg border ${current.border} ${current.bg}`}>
+  <div class="flex items-center gap-2 mb-2 font-bold text-xs uppercase tracking-wider font-mono">
+    <span class={`px-2 py-0.5 rounded text-[10px] ${current.badge}`}>{title || current.defaultTitle}</span>
+  </div>
+  <div class="text-sm text-slate-700 leading-relaxed font-normal">
+    <slot />
+  </div>
+</div>

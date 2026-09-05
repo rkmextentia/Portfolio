@@ -1,0 +1,39 @@
+---
+title: "Title of Your Article or Video Episode"
+date: 2026-09-05
+category: "AI Governance" # Options: "AI Governance" | "Enterprise GRC" | "Corporate Training" | "Regulatory Alerts"
+tags: ["EU AI Act", "Compliance", "ISO 42001"]
+youtubeUrl: "https://www.youtube.com/watch?v=YOUR_VIDEO_ID" # Optional: leave empty or remove if text-only
+summary: "A 1-to-2 sentence summary of this article that will appear on Google search results, social media preview cards, and the blog archive grid."
+featured: false # Set to true if you want this post highlighted at the top of the homepage
+readTime: "4 min read"
+author: "RKMIDIGILABS"
+---
+
+### Executive Summary
+
+Write your executive summary here. High-level briefing for leadership and technical managers.
+
+---
+
+### Core Analysis & Framework Mapping
+
+Explain the regulatory mandate or security standard:
+
+1. **Regulatory Requirement:** What does the law (e.g. EU AI Act, NIST AI RMF, ISO 27001) require?
+2. **Impact on Enterprise Systems:** Who is affected (deployers vs. providers)?
+3. **Audit Readiness:** What documentation and evidence logs must be produced?
+
+---
+
+### Implementation Checklist
+
+- [ ] Item 1: Review current AI models and classify according to risk.
+- [ ] Item 2: Establish data provenance and bias testing records.
+- [ ] Item 3: Update third-party vendor agreements.
+
+---
+
+### Advisory & Training Support
+
+For advisory inquiries or corporate training sessions, contact **RKMIDIGILABS** at [rkmvedant@gmail.com](mailto:rkmvedant@gmail.com) or call **+91 9371650121**.

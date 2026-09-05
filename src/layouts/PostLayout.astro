@@ -1,0 +1,137 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import YouTubeEmbed from '../components/YouTubeEmbed.astro';
+import SocialShareBar from '../components/SocialShareBar.astro';
+import AdSlot from '../components/AdSlot.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { title, date, summary, category, tags, youtubeUrl, image, readTime } = post.data;
+
+const formattedDate = new Intl.DateTimeFormat('en-US', { 
+  month: 'long', 
+  day: 'numeric', 
+  year: 'numeric' 
+}).format(date);
+---
+
+<BaseLayout 
+  title={title}
+  description={summary}
+  type="article"
+  publishedTime={date.toISOString()}
+  tags={tags}
+  youtubeUrl={youtubeUrl}
+  image={image}
+>
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+    
+    <!-- Breadcrumb -->
+    <div class="mb-6">
+      <a href="/blog" class="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#16A34A] hover:underline">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Back to Blog & Articles
+      </a>
+    </div>
+
+    <!-- Metadata Header -->
+    <header class="mb-8">
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <span class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide bg-slate-100 text-slate-800 border border-slate-300">
+          {category}
+        </span>
+        <div class="flex items-center gap-2 text-xs font-mono text-slate-500">
+          <span>•</span>
+          <time datetime={date.toISOString()}>{formattedDate}</time>
+          <span>•</span>
+          <span>{readTime}</span>
+        </div>
+      </div>
+
+      <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black text-black tracking-tight leading-tight">
+        {title}
+      </h1>
+
+      <p class="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
+        {summary}
+      </p>
+    </header>
+
+    <!-- Lite YouTube Video Player -->
+    {youtubeUrl && (
+      <div class="mb-10">
+        <YouTubeEmbed 
+          url={youtubeUrl} 
+          title={title}
+        />
+        <div class="mt-2.5 flex items-center justify-between text-xs text-slate-500">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-red-600 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Watch the video breakdown above
+          </span>
+          <a 
+            href={youtubeUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="text-[#16A34A] hover:underline font-bold"
+          >
+            Open in YouTube ↗
+          </a>
+        </div>
+      </div>
+    )}
+
+    <!-- Top Cover Image (when no YouTube video) -->
+    {image && !youtubeUrl && (
+      <div class="mb-10 rounded-2xl overflow-hidden border border-slate-300 shadow-sm aspect-video max-h-[440px] bg-slate-100">
+        <img src={image} alt={title} class="w-full h-full object-cover" />
+      </div>
+    )}
+
+    <!-- Social Share Bar -->
+    <SocialShareBar title={title} />
+
+    <!-- Article Content -->
+    <div class="prose prose-executive max-w-none prose-headings:scroll-mt-24">
+      <slot />
+    </div>
+
+    <!-- Modular In-Article Ad Slot -->
+    <AdSlot 
+      format="in-article" 
+      sponsorText="Need custom AI Governance or GRC corporate training for your team? Inquire for details"
+      sponsorLink="/services#training"
+    />
+
+    <!-- Tags -->
+    <div class="mt-8 pt-6 border-t border-slate-200 flex flex-wrap items-center gap-2">
+      <span class="text-xs font-mono text-slate-500 mr-2">Filed under:</span>
+      {tags.map(tag => (
+        <span class="text-xs text-slate-700 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+          #{tag}
+        </span>
+      ))}
+    </div>
+
+    <!-- Author & Advisory CTA Box -->
+    <div class="mt-12 p-6 sm:p-8 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div class="space-y-1">
+        <h3 class="text-base font-black text-black">RKMIDIGILABS</h3>
+        <p class="text-xs sm:text-sm text-slate-600 max-w-md font-normal">
+          AI Governance, EU AI Act conformity, and Enterprise GRC practice. Contact us at <strong class="text-black">rkmvedant@gmail.com</strong> or call <strong class="text-black">+91 9371650121</strong>.
+        </p>
+      </div>
+      <a 
+        href="/contact" 
+        class="shrink-0 px-5 py-2.5 rounded-lg text-sm font-bold bg-[#16A34A] hover:bg-[#15803D] text-white transition-colors"
+      >
+        Contact Practice
+      </a>
+    </div>
+
+  </article>
+</BaseLayout>

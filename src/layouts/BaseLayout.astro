@@ -1,0 +1,52 @@
+---
+import SeoHead from '../components/SeoHead.astro';
+import TopBanner from '../components/TopBanner.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import InquiryModal from '../components/InquiryModal.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  type?: "website" | "article";
+  publishedTime?: string;
+  tags?: string[];
+  youtubeUrl?: string;
+}
+
+const {
+  title,
+  description = "Executive AI Governance, Enterprise GRC Advisory, and Corporate Training. Translating the EU AI Act, NIST AI RMF, and ISO 42001 into audit-ready systems.",
+  image,
+  type = "website",
+  publishedTime,
+  tags = [],
+  youtubeUrl
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <SeoHead 
+      title={title}
+      description={description}
+      image={image}
+      type={type}
+      publishedTime={publishedTime}
+      tags={tags}
+      youtubeUrl={youtubeUrl}
+    />
+  </head>
+  <body class="bg-white text-slate-900 flex flex-col min-h-screen">
+    <TopBanner />
+    <Header />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <InquiryModal />
+  </body>
+</html>
