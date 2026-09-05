@@ -1,5 +1,22 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const staticCollection = await getCollection('blog');
+const staticPosts = staticCollection.map(p => ({
+  slug: p.slug,
+  title: p.data.title,
+  date: p.data.date.toISOString().split('T')[0],
+  category: p.data.category,
+  tags: p.data.tags,
+  youtubeUrl: p.data.youtubeUrl,
+  image: p.data.image,
+  summary: p.data.summary,
+  featured: p.data.featured,
+  published: p.data.published,
+  readTime: p.data.readTime,
+  author: p.data.author
+}));
 ---
 
 <BaseLayout 
@@ -564,7 +581,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   </div>
 
-<script>
+<script define:vars={{ staticPosts }}>
   const API_PORT = 4322;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
                   window.location.hostname.startsWith('192.168.') || 
@@ -614,22 +631,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     if (e.key === 'Escape') closeProfile();
   });
 
-  let allPosts: any[] = [];
+  let allPosts = [];
 
-  function showToast(message: string, isError = false) {
+  function showToast(message, isError = false) {
     const toast = document.getElementById('status-toast');
     const text = document.getElementById('status-text');
     if (toast && text) {
       text.textContent = message;
       toast.className = `my-4 p-3 rounded-lg border text-xs font-bold flex items-center justify-between ${
-        isError ? 'bg-red-50 border-red-300 text-red-800' : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+        isError ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-300 text-emerald-800'
       }`;
       toast.classList.remove('hidden');
-      setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+      setTimeout(() => { toast.classList.add('hidden'); }, 6000);
     }
   }
 
   async function fetchPosts() {
+    // 1. If cloud static deployment (Vercel / GitHub Pages), use pre-rendered static collection directly
+    if (!isLocal) {
+      allPosts = staticPosts || [];
+      updateStats(allPosts);
+      renderPosts(allPosts);
+      showToast('Cloud Mode Active: Posts loaded. To create or write new articles to disk, run "start-all.bat" locally.', false);
+      return;
+    }
+
+    // 2. Local environment: fetch from live local Node API
     try {
       const res = await fetch(`${API_BASE}/api/admin/posts`, {
         headers: {
@@ -639,6 +666,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       if (res.status === 401) {
         sessionStorage.removeItem('rkmidigi_admin_token');
+        localStorage.removeItem('rkmidigi_admin_token');
         window.location.href = '/admin/login';
         return;
       }
@@ -649,10 +677,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         updateStats(allPosts);
         renderPosts(allPosts);
       } else {
-        showToast(data.error || 'Failed to fetch posts', true);
+        allPosts = staticPosts || [];
+        updateStats(allPosts);
+        renderPosts(allPosts);
       }
     } catch (err) {
-      showToast('Could not reach Admin API server on port 4322.', true);
+      allPosts = staticPosts || [];
+      updateStats(allPosts);
+      renderPosts(allPosts);
     }
   }
 

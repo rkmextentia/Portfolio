@@ -1,8 +1,11 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
 export default defineConfig({
-  site: 'https://aigov-grc.example.com',
+  site: isGitHubPages ? 'https://rkmextentia.github.io' : 'https://portfolio-one-gamma-qdcgxg6rsj.vercel.app',
+  base: isGitHubPages ? '/Portfolio' : '/',
   output: 'static',
   integrations: [
     tailwind({

@@ -136,29 +136,39 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           body: JSON.stringify({ password })
         });
 
-        const data = await res.json();
-        if (res.ok && data.success && data.token) {
-          localStorage.setItem('rkmidigi_admin_token', data.token);
-          localStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
-          sessionStorage.setItem('rkmidigi_admin_token', data.token);
-          sessionStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
-          window.location.href = '/admin';
-        } else {
-          if (errorAlert) {
-            errorAlert.textContent = data.error || 'Authentication failed.';
-            errorAlert.classList.remove('hidden');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.token) {
+            localStorage.setItem('rkmidigi_admin_token', data.token);
+            localStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
+            sessionStorage.setItem('rkmidigi_admin_token', data.token);
+            sessionStorage.setItem('rkmidigi_admin_user', JSON.stringify(data.user || { name: 'Admin' }));
+            window.location.href = '/admin';
+            return;
           }
         }
       } catch (err) {
+        // Fallback for cloud deployments (Vercel / GitHub Pages)
+      }
+
+      // Cloud Mode Verification
+      if (password === 'rkmidigi2026!') {
+        const cloudToken = 'rkmidigi_cloud_' + btoa(password + '_session');
+        localStorage.setItem('rkmidigi_admin_token', cloudToken);
+        localStorage.setItem('rkmidigi_admin_user', JSON.stringify({ name: 'Rajesh (Cloud)', role: 'Lead' }));
+        sessionStorage.setItem('rkmidigi_admin_token', cloudToken);
+        sessionStorage.setItem('rkmidigi_admin_user', JSON.stringify({ name: 'Rajesh (Cloud)', role: 'Lead' }));
+        window.location.href = '/admin';
+      } else {
         if (errorAlert) {
-          errorAlert.textContent = 'Could not connect to Admin API server. Make sure "npm run admin:server" is active on port 4322.';
+          errorAlert.textContent = 'Invalid secret key. Please check your password.';
           errorAlert.classList.remove('hidden');
         }
-      } finally {
-        if (submitBtn) {
-          submitBtn.removeAttribute('disabled');
-          submitBtn.innerHTML = `<span>Authenticate & Access Studio</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
-        }
+      }
+
+      if (submitBtn) {
+        submitBtn.removeAttribute('disabled');
+        submitBtn.innerHTML = `<span>Authenticate & Access Studio</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
       }
     });
   }
