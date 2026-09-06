@@ -6,6 +6,25 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   title="New Post & Video — RKMIDIGILABS Studio" 
   description="Create and publish new blog articles and YouTube video analyses for RKMIDIGILABS."
 >
+  <!-- Immediate Pre-Render Route Guard: Forces login prompt if no active unexpired session exists -->
+  <script is:inline>
+    (function() {
+      try {
+        const token = sessionStorage.getItem('rkmidigi_admin_token');
+        const expires = parseInt(sessionStorage.getItem('rkmidigi_admin_expires') || '0', 10);
+        if (!token || Date.now() > expires) {
+          sessionStorage.removeItem('rkmidigi_admin_token');
+          sessionStorage.removeItem('rkmidigi_admin_user');
+          sessionStorage.removeItem('rkmidigi_admin_expires');
+          localStorage.removeItem('rkmidigi_admin_token');
+          localStorage.removeItem('rkmidigi_admin_user');
+          window.location.replace('/admin/login?auth_prompt=1');
+        }
+      } catch(e) {
+        window.location.replace('/admin/login?auth_prompt=1');
+      }
+    })();
+  </script>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Header with Back Link & Action Buttons -->
@@ -564,9 +583,13 @@ Write your executive brief here...
     ? `${window.location.protocol}//${window.location.hostname}:${API_PORT}` 
     : window.location.origin;
 
-  const token = localStorage.getItem('rkmidigi_admin_token') || sessionStorage.getItem('rkmidigi_admin_token');
-  if (!token) {
-    window.location.href = '/admin/login';
+  const token = sessionStorage.getItem('rkmidigi_admin_token');
+  const expires = parseInt(sessionStorage.getItem('rkmidigi_admin_expires') || '0', 10);
+  if (!token || Date.now() > expires) {
+    sessionStorage.removeItem('rkmidigi_admin_token');
+    sessionStorage.removeItem('rkmidigi_admin_user');
+    sessionStorage.removeItem('rkmidigi_admin_expires');
+    window.location.replace('/admin/login?auth_prompt=1');
   }
 
   // Logout
@@ -575,6 +598,7 @@ Write your executive brief here...
     localStorage.removeItem('rkmidigi_admin_user');
     sessionStorage.removeItem('rkmidigi_admin_token');
     sessionStorage.removeItem('rkmidigi_admin_user');
+    sessionStorage.removeItem('rkmidigi_admin_expires');
     window.location.href = '/admin/login?logged_out=1';
   }
 
