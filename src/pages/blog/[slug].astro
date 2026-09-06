@@ -31,21 +31,15 @@ const isDraft = post.data.published === false;
 
   <script is:inline define:vars={{ slug: post.slug }}>
     (function() {
-      var API_BASE = 'http://localhost:4322';
-
-      async function checkLiveStatus() {
+      function checkLiveStatus() {
         try {
-          var res = await fetch(API_BASE + '/api/public/posts/' + slug + '?_t=' + Date.now());
-          if (!res.ok) return;
-          var data = await res.json();
-          if (data.success) {
-            var draftNotice = document.getElementById('draft-notice');
-            if (draftNotice) {
-              if (data.published === false) {
-                draftNotice.classList.remove('hidden');
-              } else {
-                draftNotice.classList.add('hidden');
-              }
+          var toggles = JSON.parse(localStorage.getItem('rkmidigi_post_toggles') || '{}');
+          var draftNotice = document.getElementById('draft-notice');
+          if (draftNotice && typeof toggles[slug] === 'boolean') {
+            if (toggles[slug] === false) {
+              draftNotice.classList.remove('hidden');
+            } else {
+              draftNotice.classList.add('hidden');
             }
           }
         } catch(e) {}
@@ -57,7 +51,7 @@ const isDraft = post.data.published === false;
         bc.onmessage = function() { checkLiveStatus(); };
       } catch(e) {}
       window.addEventListener('storage', function(e) {
-        if (e.key === 'rkmidigi_post_toggle') checkLiveStatus();
+        if (e.key === 'rkmidigi_post_toggle' || e.key === 'rkmidigi_post_toggles') checkLiveStatus();
       });
       window.addEventListener('focus', checkLiveStatus);
     })();
