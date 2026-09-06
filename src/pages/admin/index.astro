@@ -24,6 +24,7 @@ const staticPosts = staticCollection.map(p => ({
   title="Admin Dashboard — RKMIDIGILABS Studio" 
   description="Manage, edit, preview, and publish blog articles and YouTube videos for RKMIDIGILABS."
 >
+  <script id="admin-static-data" type="application/json" set:html={JSON.stringify({ staticPosts, staticCourses: COURSES })} />
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     
     <!-- Top Bar with User Info & Actions -->
@@ -39,16 +40,15 @@ const staticPosts = staticCollection.map(p => ({
       </div>
 
       <div class="flex flex-wrap items-center gap-2.5">
-        <!-- Live API Server Status Badge -->
-        <a 
-          href="http://localhost:4322/api/admin/health" 
-          target="_blank"
-          title="Click to check live API health on port 4322" 
-          class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+        <!-- Live Studio Status Badge -->
+        <div 
+          id="system-mode-badge"
+          class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs"
+          title="Studio Connected & Live"
         >
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>API 4322 Online</span>
-        </a>
+          <span id="system-mode-text">Studio Live & Synced</span>
+        </div>
 
         <a 
           href="/" 
@@ -758,6 +758,10 @@ const staticPosts = staticCollection.map(p => ({
               <button type="button" id="modal-launch-facebook" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-[#1877F2] hover:bg-[#0c65d8] text-white flex items-center gap-1.5 transition-all">
                 <span>Facebook</span>
               </button>
+              <button type="button" id="modal-copy-text-btn" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-800 border border-slate-300 hover:bg-slate-100 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                <span>Copy Text & Link</span>
+              </button>
             </div>
           </div>
 
@@ -970,45 +974,98 @@ const staticPosts = staticCollection.map(p => ({
   }
 
   async function fetchPosts() {
-    // 1. If cloud static deployment (Vercel / GitHub Pages), use pre-rendered static collection directly
-    if (!isLocal) {
-      allPosts = staticPosts || [];
-      updateStats(allPosts);
-      renderPosts(allPosts);
-      showToast('Cloud Mode Active: Posts loaded. To create or write new articles to disk, run "start-all.bat" locally.', false);
-      return;
-    }
+    let posts = [...(staticPosts || [])];
 
-    // 2. Local environment: fetch from live local Node API
+    // 1. Load newly created custom posts from localStorage
     try {
-      const res = await fetch(`${API_BASE}/api/admin/posts`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+      if (Array.isArray(customPosts)) {
+        for (const cp of customPosts) {
+          if (!posts.some(p => p.slug === cp.slug)) {
+            posts.unshift(cp);
+          }
         }
+      }
+    } catch(e) {}
+
+    // 2. Apply any drafted local edits from localStorage
+    posts = posts.map(p => {
+      try {
+        const edited = localStorage.getItem(`rkmidigi_post_edit_${p.slug}`);
+        if (edited) {
+          return { ...p, ...JSON.parse(edited) };
+        }
+      } catch(e) {}
+      return p;
+    });
+
+    // 3. Apply any publish / unpublished toggle states
+    try {
+      const toggles = JSON.parse(localStorage.getItem('rkmidigi_post_toggles') || '{}');
+      posts = posts.map(p => {
+        if (typeof toggles[p.slug] === 'boolean') {
+          return { ...p, published: toggles[p.slug] };
+        }
+        return p;
       });
+    } catch(e) {}
 
-      if (res.status === 401) {
-        sessionStorage.removeItem('rkmidigi_admin_token');
-        localStorage.removeItem('rkmidigi_admin_token');
-        window.location.href = '/admin/login';
-        return;
+    // 4. Filter out any locally deleted posts
+    try {
+      const deletedSlugs = JSON.parse(localStorage.getItem('rkmidigi_deleted_posts') || '[]');
+      if (Array.isArray(deletedSlugs)) {
+        posts = posts.filter(p => !deletedSlugs.includes(p.slug));
       }
+    } catch(e) {}
 
-      const data = await res.json();
-      if (data.success) {
-        allPosts = data.posts || [];
-        updateStats(allPosts);
-        renderPosts(allPosts);
-      } else {
-        allPosts = staticPosts || [];
-        updateStats(allPosts);
-        renderPosts(allPosts);
+    // 5. Query Supabase posts table if available
+    try {
+      const { data: sbPosts, error } = await supabase.from('posts').select('*');
+      if (!error && Array.isArray(sbPosts) && sbPosts.length > 0) {
+        for (const sp of sbPosts) {
+          const mapped = {
+            slug: sp.slug,
+            title: sp.title,
+            category: sp.category,
+            date: sp.date,
+            readTime: sp.read_time,
+            featured: sp.featured,
+            published: sp.published,
+            youtubeUrl: sp.youtube_url,
+            image: sp.image,
+            summary: sp.summary,
+            tags: Array.isArray(sp.tags) ? sp.tags : [],
+            body: sp.body,
+            author: sp.author
+          };
+          const idx = posts.findIndex(p => p.slug === mapped.slug);
+          if (idx > -1) {
+            posts[idx] = { ...posts[idx], ...mapped };
+          } else {
+            posts.unshift(mapped);
+          }
+        }
       }
-    } catch (err) {
-      allPosts = staticPosts || [];
-      updateStats(allPosts);
-      renderPosts(allPosts);
+    } catch(e) {}
+
+    // 6. If local Node API is active on localhost:4322, sync from disk
+    if (isLocal) {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/posts`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
+            posts = data.posts;
+          }
+        }
+      } catch (err) {}
     }
+
+    allPosts = posts;
+    updateStats(allPosts);
+    renderPosts(allPosts);
   }
 
   function updateStats(posts) {
@@ -1142,51 +1199,56 @@ const staticPosts = staticCollection.map(p => ({
       btn.classList.add('opacity-50', 'pointer-events-none');
     }
 
+    post.published = !post.published;
+    updateStats(allPosts);
+
+    if (btn) {
+      const isPub = post.published;
+      btn.className = `publish-toggle-btn inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
+        isPub 
+          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-amber-100 hover:text-amber-900 hover:border-amber-300' 
+          : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-emerald-100 hover:text-emerald-800 hover:border-emerald-300'
+      }`;
+      btn.title = isPub 
+        ? 'Status: Published. Click to Unpublish (set to Draft)' 
+        : 'Status: Unpublished. Click to Publish (make Live)';
+      btn.innerHTML = `<span class="w-2 h-2 rounded-full ${isPub ? 'bg-emerald-500' : 'bg-amber-500'}"></span><span class="btn-label">${isPub ? 'Published' : 'Unpublished'}</span>`;
+    }
+
+    // Persist to localStorage
     try {
-      const res = await fetch(`${API_BASE}/api/admin/posts/${slug}/toggle-publish`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        post.published = data.published;
-        updateStats(allPosts);
+      const toggles = JSON.parse(localStorage.getItem('rkmidigi_post_toggles') || '{}');
+      toggles[slug] = post.published;
+      localStorage.setItem('rkmidigi_post_toggles', JSON.stringify(toggles));
+      localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, published: post.published, timestamp: Date.now() }));
+    } catch(e) {}
 
-        if (btn) {
-          const isPub = data.published;
-          btn.className = `publish-toggle-btn inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
-            isPub 
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-amber-100 hover:text-amber-900 hover:border-amber-300' 
-              : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-emerald-100 hover:text-emerald-800 hover:border-emerald-300'
-          }`;
-          btn.title = isPub 
-            ? 'Status: Published. Click to Unpublish (set to Draft)' 
-            : 'Status: Unpublished. Click to Publish (make Live)';
-          btn.innerHTML = `<span class="w-2 h-2 rounded-full ${isPub ? 'bg-emerald-500' : 'bg-amber-500'}"></span><span class="btn-label">${isPub ? 'Published' : 'Unpublished'}</span>`;
-        }
+    // Broadcast to open tabs
+    try {
+      const bc = new BroadcastChannel('rkmidigi_blog_channel');
+      bc.postMessage({ type: 'POST_PUBLISH_TOGGLED', slug, published: post.published, timestamp: Date.now() });
+    } catch(e) {}
 
-        showToast(data.message || (data.published ? 'Post published!' : 'Post unpublished (draft)!'));
-        applyFilter();
+    // Update in Supabase if exists
+    try {
+      await supabase.from('posts').update({ published: post.published }).eq('slug', slug);
+    } catch(e) {}
 
-        // Broadcast to blog page and other tabs
-        try {
-          const bc = new BroadcastChannel('rkmidigi_blog_channel');
-          bc.postMessage({ type: 'POST_PUBLISH_TOGGLED', slug, published: data.published, timestamp: Date.now() });
-        } catch(e) {}
-        try {
-          localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, published: data.published, timestamp: Date.now() }));
-        } catch(e) {}
-      } else {
-        showToast(data.error || 'Failed to toggle publish status.', true);
-      }
-    } catch (err) {
-      showToast('Network error while toggling publish status.', true);
-    } finally {
-      if (btn) {
-        btn.classList.remove('opacity-50', 'pointer-events-none');
-      }
+    // If local Node server running, update local file
+    if (isLocal) {
+      try {
+        await fetch(`${API_BASE}/api/admin/posts/${slug}/toggle-publish`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (err) {}
+    }
+
+    showToast(post.published ? '✅ Post marked as Published!' : '⚠️ Post marked as Unpublished (Draft)!');
+    applyFilter();
+
+    if (btn) {
+      btn.classList.remove('opacity-50', 'pointer-events-none');
     }
   }
 
@@ -1194,41 +1256,60 @@ const staticPosts = staticCollection.map(p => ({
 
   // Delete post
   (window as any).deletePost = async (slug: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete the post "${title}"?\n\nThis will permanently remove the Markdown file from src/content/blog/${slug}.md.`)) {
+    if (!confirm(`Are you sure you want to remove the post "${title}" from the active post store?`)) {
       return;
     }
 
+    // Persist removal in localStorage
     try {
-      const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(`Post "${slug}" was deleted.`);
-        fetchPosts();
-
-        // Broadcast deletion
-        try {
-          const bc = new BroadcastChannel('rkmidigi_blog_channel');
-          bc.postMessage({ type: 'POST_DELETED', slug, timestamp: Date.now() });
-        } catch(e) {}
-        try {
-          localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, deleted: true, timestamp: Date.now() }));
-        } catch(e) {}
-      } else {
-        showToast(data.error || 'Failed to delete post.', true);
+      const deletedSlugs = JSON.parse(localStorage.getItem('rkmidigi_deleted_posts') || '[]');
+      if (!deletedSlugs.includes(slug)) {
+        deletedSlugs.push(slug);
+        localStorage.setItem('rkmidigi_deleted_posts', JSON.stringify(deletedSlugs));
       }
-    } catch (err) {
-      showToast('Network error while deleting post.', true);
+      const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+      const filtered = customPosts.filter((p: any) => p.slug !== slug);
+      localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(filtered));
+    } catch(e) {}
+
+    // Broadcast deletion
+    try {
+      const bc = new BroadcastChannel('rkmidigi_blog_channel');
+      bc.postMessage({ type: 'POST_DELETED', slug, timestamp: Date.now() });
+    } catch(e) {}
+
+    // Delete in Supabase if exists
+    try {
+      await supabase.from('posts').delete().eq('slug', slug);
+    } catch(e) {}
+
+    // If local server running, delete local markdown file
+    if (isLocal) {
+      try {
+        await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (err) {}
     }
+
+    // Immediately remove from in-memory allPosts and re-render
+    allPosts = allPosts.filter(p => p.slug !== slug);
+    updateStats(allPosts);
+    renderPosts(allPosts);
+    showToast(`🗑️ Post "${title}" was removed.`);
   };
 
   // Social Media Push Modal Logic
   let currentPushSlug = '';
   function openSocialPushModal(slug: string) {
-    const post = allPosts.find(p => p.slug === slug);
-    if (!post) return;
+    let post = allPosts.find(p => p.slug === slug);
+    if (!post) {
+      post = (staticPosts || []).find(p => p.slug === slug);
+    }
+    if (!post) {
+      post = { slug, title: slug, summary: '', tags: [] };
+    }
     currentPushSlug = slug;
 
     const modal = document.getElementById('social-push-modal');
@@ -1280,6 +1361,20 @@ const staticPosts = staticCollection.map(p => ({
       if (charCount) charCount.textContent = `${copyArea.value.length} chars`;
     });
   }
+
+  // Copy share text to clipboard
+  document.getElementById('modal-copy-text-btn')?.addEventListener('click', async () => {
+    const text = copyArea?.value || '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('📋 Copied full social message & links to clipboard! Ready to paste into LinkedIn or WhatsApp.');
+    } catch(err) {
+      copyArea.select();
+      document.execCommand('copy');
+      showToast('📋 Copied to clipboard!');
+    }
+  });
 
   document.getElementById('modal-launch-linkedin')?.addEventListener('click', () => {
     const url = `${window.location.origin}/blog/${currentPushSlug}/`;

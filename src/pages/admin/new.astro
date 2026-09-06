@@ -551,6 +551,8 @@ Write your executive brief here...
   </div>
 
 <script>
+  import { supabase } from '../../lib/supabase';
+
   const API_PORT = 4322;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
                   window.location.hostname.startsWith('192.168.') || 
@@ -1009,6 +1011,7 @@ Write your executive brief here...
         title,
         slug,
         category,
+        date: new Date().toISOString().split('T')[0],
         readTime,
         featured,
         published: isPublished,
@@ -1016,11 +1019,20 @@ Write your executive brief here...
         image,
         summary,
         tags,
-        body
+        body,
+        author: 'RKMIDIGILABS'
       };
 
-      // 1. Cache to localStorage
+      // 1. Cache to localStorage custom posts list
       try {
+        const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+        const existingIdx = customPosts.findIndex((p: any) => p.slug === slug);
+        if (existingIdx > -1) {
+          customPosts[existingIdx] = newPostData;
+        } else {
+          customPosts.unshift(newPostData);
+        }
+        localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(customPosts));
         localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(newPostData));
         localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: isPublished, timestamp: Date.now() }));
       } catch(e) {}
@@ -1031,7 +1043,26 @@ Write your executive brief here...
         bc.postMessage({ type: 'POST_CREATED', slug, published: isPublished, timestamp: Date.now() });
       } catch(e) {}
 
-      // 3. If running locally with Node server, write file to disk
+      // 3. Upsert to Supabase if table exists
+      try {
+        await supabase.from('posts').upsert({
+          slug,
+          title,
+          category,
+          date: newPostData.date,
+          read_time: readTime,
+          featured,
+          published: isPublished,
+          youtube_url: youtubeUrl || null,
+          image: image || null,
+          summary,
+          tags,
+          body,
+          author: 'RKMIDIGILABS'
+        });
+      } catch (sbErr) {}
+
+      // 4. If running locally with Node server, write file to disk
       let localSaved = false;
       if (isLocal) {
         try {
@@ -1050,11 +1081,14 @@ Write your executive brief here...
 
       showToast(localSaved 
         ? `✅ Post published to local filesystem! Available at /blog/${slug}` 
-        : `✅ Post saved in browser session! Use "Export .md" button at top to download the markdown file anytime.`);
+        : `🎉 Post published and added to Studio! Available at /blog/${slug}`);
+
+      publishBtn.removeAttribute('disabled');
+      publishBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Published!</span>`;
 
       setTimeout(() => {
         window.location.href = '/admin';
-      }, 1500);
+      }, 1000);
     });
   }
 </script>

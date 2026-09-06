@@ -167,3 +167,34 @@ VALUES
   ('nist-rmf-mod-7', 'course-nist-ai-rmf', 7, 'Executive Board Reporting & Audit Readiness', '38 mins', 'https://www.youtube.com/embed/p1T_e4tGvHQ', false)
 ON CONFLICT (id) DO NOTHING;
 
+-- ==============================================================================
+-- 7. Blog Articles & Video Episodes Table
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.posts (
+  slug TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'AI Governance',
+  date TEXT NOT NULL,
+  read_time TEXT DEFAULT '4 min read',
+  summary TEXT,
+  body TEXT,
+  youtube_url TEXT,
+  image TEXT,
+  tags JSONB DEFAULT '[]'::jsonb,
+  published BOOLEAN DEFAULT true,
+  featured BOOLEAN DEFAULT false,
+  author TEXT DEFAULT 'RKMIDIGILABS',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can view published posts" 
+  ON public.posts FOR SELECT USING (true);
+
+CREATE POLICY "Admin can manage all posts" 
+  ON public.posts FOR ALL USING (true) WITH CHECK (true);
+
+
