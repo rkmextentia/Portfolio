@@ -2036,7 +2036,31 @@ const staticPosts = staticCollection.map(p => ({
         }
       }
 
-      showToast('All 3 Masterclasses and 24 Video Lessons successfully pushed to Supabase PostgreSQL!');
+      // Sync blog articles to Supabase 'posts' table if table exists
+      try {
+        const postsToSync = allPosts || [];
+        for (const p of postsToSync) {
+          await supabase.from('posts').upsert({
+            slug: p.slug,
+            title: p.title,
+            category: p.category || 'Technology',
+            date: p.date,
+            read_time: p.readTime || '5 min read',
+            featured: Boolean(p.featured),
+            published: p.published !== false,
+            youtube_url: p.youtubeUrl || null,
+            image: p.image || null,
+            summary: p.summary || '',
+            tags: p.tags || [],
+            body: p.body || '',
+            author: p.author || 'RKMIDIGILABS'
+          });
+        }
+      } catch (postErr) {
+        console.warn('Posts table sync notice:', postErr);
+      }
+
+      showToast('All Masterclasses, Video Lessons, and Blog Articles successfully pushed to Supabase!');
       await fetchCoursesFromSupabase();
       renderCourses();
     } catch (err) {

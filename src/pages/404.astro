@@ -165,29 +165,56 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script>
   import { supabase } from '../lib/supabase';
 
-  function extractYouTubeId(url: string) {
+  function extractYouTubeId(url: string): string | null {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    let cleanUrl = url.trim();
+    const iframeSrc = cleanUrl.match(/src=["']([^"']+)["']/i);
+    if (iframeSrc && iframeSrc[1]) cleanUrl = iframeSrc[1];
+
+    const patterns = [
+      /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([a-zA-Z0-9_-]{11})/i,
+      /[?&]v=([a-zA-Z0-9_-]{11})/i,
+      /^([a-zA-Z0-9_-]{11})$/
+    ];
+
+    for (const pattern of patterns) {
+      const match = cleanUrl.match(pattern);
+      if (match && match[1]) return match[1];
+    }
+    return null;
   }
 
   function formatMarkdown(md: string) {
     if (!md) return '';
-    const escaped = md
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    let text = md;
 
-    return escaped
-      .replace(/^### (.*$)/gim, '<h3 class="text-xl font-black text-black mt-8 mb-3">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-black text-black mt-10 mb-4">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-black text-black mt-10 mb-4">$1</h1>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-black">$1</strong>')
-      .replace(/\*(.*?)\*/gim, '<em class="italic text-slate-800">$1</em>')
-      .replace(/^\- (.*$)/gim, '<li class="ml-6 list-disc text-slate-700 my-1">$1</li>')
-      .replace(/\n\n+/g, '</p><p class="my-4 text-slate-700 text-base leading-relaxed">')
-      .replace(/^/, '<p class="my-4 text-slate-700 text-base leading-relaxed">') + '</p>';
+    // Process images first before escaping: ![alt](url)
+    text = text.replace(/!\[(.*?)\]\((.*?)\)/gim, '<figure class="my-8"><img src="$2" alt="$1" class="w-full max-h-[550px] object-contain rounded-xl border border-slate-300 shadow-sm bg-slate-50" /><figcaption class="text-xs text-slate-500 mt-2 text-center font-mono">$1</figcaption></figure>');
+
+    // Process links: [text](url)
+    text = text.replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#16A34A] hover:underline font-bold">$1</a>');
+
+    // Headers
+    text = text.replace(/^### (.*$)/gim, '<h3 class="text-xl font-black text-black mt-8 mb-3">$1</h3>');
+    text = text.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-black text-black mt-10 mb-4">$1</h2>');
+    text = text.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-black text-black mt-10 mb-4">$1</h1>');
+
+    // Blockquotes
+    text = text.replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-[#16A34A] pl-4 py-1.5 my-4 italic text-slate-700 bg-slate-50 rounded-r-lg">$1</blockquote>');
+
+    // Bold & Italics
+    text = text.replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-black">$1</strong>');
+    text = text.replace(/\*(.*?)\*/gim, '<em class="italic text-slate-800">$1</em>');
+
+    // Lists
+    text = text.replace(/^\- (.*$)/gim, '<li class="ml-6 list-disc text-slate-700 my-1">$1</li>');
+
+    // Code blocks & inline code
+    text = text.replace(/`([^`]+)`/gim, '<code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs border border-slate-200">$1</code>');
+
+    // Paragraphs
+    text = text.replace(/\n\n+/g, '</p><p class="my-4 text-slate-700 text-base leading-relaxed">');
+    return '<p class="my-4 text-slate-700 text-base leading-relaxed">' + text + '</p>';
   }
 
   async function resolveDynamicBlogPost() {

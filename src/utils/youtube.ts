@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Utility functions for YouTube URL parsing, high-res thumbnail extraction,
  * and responsive iframe rendering.
  */
@@ -17,12 +17,19 @@ export interface YouTubeInfo {
 export function extractYouTubeId(url: string): string | null {
   if (!url) return null;
   
-  const cleanUrl = url.trim();
+  let cleanUrl = url.trim();
+
+  // If full <iframe> tag was pasted, extract the src URL
+  const iframeSrc = cleanUrl.match(/src=["']([^"']+)["']/i);
+  if (iframeSrc && iframeSrc[1]) {
+    cleanUrl = iframeSrc[1];
+  }
   
-  // Patterns for youtu.be, youtube.com/watch?v=, youtube.com/embed/, youtube.com/shorts/
+  // Patterns for youtu.be, youtube.com/watch?v=, youtube.com/embed/, youtube.com/shorts/, youtube.com/live/
   const patterns = [
-    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/,
-    /^([\w-]{11})$/ // Raw 11-char ID
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([a-zA-Z0-9_-]{11})/i,
+    /[?&]v=([a-zA-Z0-9_-]{11})/i,
+    /^([a-zA-Z0-9_-]{11})$/ // Raw 11-char ID
   ];
 
   for (const pattern of patterns) {

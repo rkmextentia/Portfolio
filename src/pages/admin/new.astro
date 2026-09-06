@@ -684,11 +684,23 @@ Write your executive brief here...
       .replace(/-+$/, '');
   }
 
-  function extractYouTubeId(url: string) {
+  function extractYouTubeId(url: string): string | null {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    let cleanUrl = url.trim();
+    const iframeSrc = cleanUrl.match(/src=["']([^"']+)["']/i);
+    if (iframeSrc && iframeSrc[1]) cleanUrl = iframeSrc[1];
+
+    const patterns = [
+      /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([a-zA-Z0-9_-]{11})/i,
+      /[?&]v=([a-zA-Z0-9_-]{11})/i,
+      /^([a-zA-Z0-9_-]{11})$/
+    ];
+
+    for (const pattern of patterns) {
+      const match = cleanUrl.match(pattern);
+      if (match && match[1]) return match[1];
+    }
+    return null;
   }
 
   // Auto-slug generator
@@ -774,15 +786,12 @@ Write your executive brief here...
     }
   }
 
-  if (videoInput) {
-    videoInput.addEventListener('input', updateCoverPreview);
-  }
+  ['input', 'change', 'paste', 'blur'].forEach(evt => {
+    videoInput?.addEventListener(evt, () => setTimeout(updateCoverPreview, 50));
+    postImage?.addEventListener(evt, () => setTimeout(updateCoverPreview, 50));
+  });
 
-  if (postImage) {
-    postImage.addEventListener('input', updateCoverPreview);
-  }
-
-  // Image upload handling
+  // Image upload handling (Universal Browser & Cloud Support)
   if (uploadImageBtn && imageFileInput) {
     uploadImageBtn.addEventListener('click', () => {
       const file = imageFileInput.files?.[0];
@@ -797,63 +806,91 @@ Write your executive brief here...
       const reader = new FileReader();
       reader.onload = async (e) => {
         const fileData = e.target?.result as string;
+        let uploadedUrl = fileData; // Guaranteed fallback (Data URL)
+
+        // 1. Try Supabase storage if available
         try {
-          const res = await fetch(`${API_BASE}/api/admin/upload`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              fileName: file.name,
-              fileData
-            })
-          });
+          const fileExt = file.name.split('.').pop() || 'png';
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+          const filePath = `articles/${fileName}`;
 
-          const result = await res.json();
-          if (result.success) {
-            showToast(`✅ Image uploaded: ${result.fileName}`);
-            if (imagePreviewBox && imagePreviewThumb && imagePreviewName && imagePreviewUrl) {
-              imagePreviewThumb.src = result.url;
-              imagePreviewName.textContent = result.fileName;
-              imagePreviewUrl.textContent = result.url;
-              imagePreviewBox.classList.remove('hidden');
-            }
+          const { data, error } = await supabase.storage
+            .from('blog-images')
+            .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
-            // Auto-populate cover image if empty
-            if (postImage && !postImage.value.trim()) {
-              postImage.value = result.url;
-              updateCoverPreview();
+          if (!error && data) {
+            const { data: publicData } = supabase.storage.from('blog-images').getPublicUrl(filePath);
+            if (publicData?.publicUrl) {
+              uploadedUrl = publicData.publicUrl;
             }
-
-            // Insert markdown snippet into post body at cursor
-            if (bodyInput) {
-              const snippet = `\n${result.markdown}\n`;
-              const start = bodyInput.selectionStart || 0;
-              const end = bodyInput.selectionEnd || 0;
-              const text = bodyInput.value;
-              bodyInput.value = text.substring(0, start) + snippet + text.substring(end);
-              bodyInput.focus();
-              bodyInput.selectionStart = bodyInput.selectionEnd = start + snippet.length;
-            }
-          } else {
-            showToast(result.error || 'Failed to upload image.', true);
           }
-        } catch (err) {
-          showToast('Failed to upload image. Verify Admin API server on port 4322.', true);
-        } finally {
-          uploadImageBtn.removeAttribute('disabled');
-          uploadImageBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Upload & Insert</span>`;
+        } catch (storageErr) {
+          // Continue to next tier
         }
+
+        // 2. If running locally, also sync with local filesystem
+        if (isLocal) {
+          try {
+            const res = await fetch(`${API_BASE}/api/admin/upload`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ fileName: file.name, fileData })
+            });
+            if (res.ok) {
+              const localRes = await res.json();
+              if (localRes.url && !uploadedUrl.startsWith('http')) {
+                uploadedUrl = localRes.url;
+              }
+            }
+          } catch(e) {}
+        }
+
+        // 3. Update preview and inputs immediately
+        if (imagePreviewBox && imagePreviewThumb && imagePreviewName && imagePreviewUrl) {
+          imagePreviewThumb.src = uploadedUrl;
+          imagePreviewName.textContent = file.name;
+          imagePreviewUrl.textContent = uploadedUrl.startsWith('data:') ? `Data URL (${Math.round(file.size / 1024)} KB)` : uploadedUrl;
+          imagePreviewBox.classList.remove('hidden');
+        }
+
+        if (postImage) {
+          postImage.value = uploadedUrl;
+          updateCoverPreview();
+        }
+
+        // 4. Insert Markdown snippet into post body at cursor
+        if (bodyInput) {
+          const snippet = `\n![${file.name}](${uploadedUrl})\n`;
+          const start = bodyInput.selectionStart || 0;
+          const end = bodyInput.selectionEnd || 0;
+          const text = bodyInput.value;
+          bodyInput.value = text.substring(0, start) + snippet + text.substring(end);
+          bodyInput.focus();
+          bodyInput.selectionStart = bodyInput.selectionEnd = start + snippet.length;
+        }
+
+        showToast(`✅ Image uploaded and inserted into article!`);
+        uploadImageBtn.removeAttribute('disabled');
+        uploadImageBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Upload & Insert</span>`;
       };
+
+      reader.onerror = () => {
+        showToast('Failed to read image file.', true);
+        uploadImageBtn.removeAttribute('disabled');
+        uploadImageBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Upload & Insert</span>`;
+      };
+
       reader.readAsDataURL(file);
     });
   }
 
   if (setAsCoverBtn) {
     setAsCoverBtn.addEventListener('click', () => {
-      if (imagePreviewUrl && postImage) {
-        postImage.value = imagePreviewUrl.textContent || '';
+      if (imagePreviewThumb && postImage) {
+        postImage.value = imagePreviewThumb.src || '';
         updateCoverPreview();
         showToast('✅ Set as cover image!');
       }
