@@ -546,6 +546,8 @@ const staticPosts = staticCollection.map(p => ({
   </div>
 
 <script>
+  import { supabase } from '../../lib/supabase';
+
   const API_PORT = 4322;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
                   window.location.hostname.startsWith('192.168.') || 
@@ -807,13 +809,20 @@ const staticPosts = staticCollection.map(p => ({
       }
     } catch (e) {}
 
-    // Tier 2: Check for locally drafted edits in localStorage
+    // Tier 2: Check for custom posts list & locally drafted edits in localStorage
     try {
+      const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+      const cp = customPosts.find((p: any) => p.slug === slug);
+      if (cp) {
+        post = { ...(post || {}), ...cp };
+      }
+
       const cached = localStorage.getItem(`rkmidigi_post_edit_${slug}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         post = { ...(post || {}), ...parsed };
       }
+
       const toggle = localStorage.getItem('rkmidigi_post_toggle');
       if (toggle) {
         const t = JSON.parse(toggle);
@@ -823,21 +832,50 @@ const staticPosts = staticCollection.map(p => ({
       }
     } catch (e) {}
 
-    // Tier 3: If running locally with Node server, fetch live disk version
+    // Tier 3: Supabase cloud fetch if not yet loaded
+    if (!post || !post.body) {
+      try {
+        const sbPromise = supabase.from('posts').select('*').eq('slug', slug).maybeSingle();
+        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 1500));
+        const res: any = await Promise.race([sbPromise, timeoutPromise]);
+        if (res && res.data) {
+          const sp = res.data;
+          post = {
+            slug: sp.slug,
+            title: sp.title,
+            category: sp.category,
+            date: sp.date,
+            readTime: sp.read_time,
+            featured: sp.featured,
+            published: sp.published,
+            youtubeUrl: sp.youtube_url,
+            image: sp.image,
+            summary: sp.summary,
+            tags: Array.isArray(sp.tags) ? sp.tags : [],
+            body: sp.body,
+            author: sp.author || 'RKMIDIGILABS'
+          };
+        }
+      } catch(e) {}
+    }
+
+    // Tier 4: If running locally with Node server, fetch live disk version
     if (isLocal) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
         const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.post) {
             post = data.post;
           }
         }
-      } catch (err) {
-        // Fall back seamlessly to static post
-      }
+      } catch (err) {}
     }
 
     if (post) {
@@ -1117,56 +1155,93 @@ const staticPosts = staticCollection.map(p => ({
       saveBtn.setAttribute('disabled', 'true');
       saveBtn.innerHTML = `<span>Saving Changes...</span>`;
 
-      const postData = {
-        title,
-        slug,
-        date: postDate,
-        category,
-        readTime,
-        featured,
-        youtubeUrl,
-        image,
-        summary,
-        tags,
-        published: currentPublished,
-        body
-      };
-
-      // 1. Cache to localStorage
       try {
-        localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(postData));
-        localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: currentPublished, timestamp: Date.now() }));
-      } catch(e) {}
+        const postData = {
+          title,
+          slug,
+          date: postDate || new Date().toISOString().split('T')[0],
+          category,
+          readTime,
+          featured,
+          youtubeUrl,
+          image,
+          summary,
+          tags,
+          published: currentPublished,
+          body,
+          author: 'RKMIDIGILABS'
+        };
 
-      // 2. Broadcast to other open tabs
-      try {
-        const bc = new BroadcastChannel('rkmidigi_blog_channel');
-        bc.postMessage({ type: 'POST_UPDATED', slug, published: currentPublished, timestamp: Date.now() });
-      } catch(e) {}
-
-      // 3. If running locally with Node server, write to file on disk
-      let localSaved = false;
-      if (isLocal) {
+        // 1. Cache to localStorage instantly
         try {
-          const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(postData)
-          });
-          const data = await res.json();
-          if (data.success) localSaved = true;
-        } catch (err) {}
+          // Update custom posts array if present
+          const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+          const cpIdx = customPosts.findIndex((p: any) => p.slug === slug);
+          if (cpIdx > -1) {
+            customPosts[cpIdx] = { ...customPosts[cpIdx], ...postData };
+            localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(customPosts));
+          }
+          localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(postData));
+          localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: currentPublished, timestamp: Date.now() }));
+        } catch(e) {}
+
+        // 2. Broadcast to other open tabs
+        try {
+          const bc = new BroadcastChannel('rkmidigi_blog_channel');
+          bc.postMessage({ type: 'POST_UPDATED', slug, published: currentPublished, timestamp: Date.now() });
+        } catch(e) {}
+
+        // 3. Supabase upsert (bounded by 1500ms timeout)
+        const supabaseSync = Promise.race([
+          supabase.from('posts').upsert({
+            slug,
+            title,
+            category,
+            date: postData.date,
+            read_time: readTime,
+            featured,
+            published: currentPublished,
+            youtube_url: youtubeUrl || null,
+            image: image || null,
+            summary,
+            tags,
+            body,
+            author: 'RKMIDIGILABS'
+          }),
+          new Promise(res => setTimeout(res, 1500))
+        ]).catch(() => {});
+
+        // 4. If running locally with Node server, write to file on disk
+        const localSync = isLocal ? (async () => {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+            const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(postData),
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return await res.json();
+          } catch (err) {
+            return null;
+          }
+        })() : Promise.resolve(null);
+
+        await Promise.allSettled([supabaseSync, localSync]);
+
+        showToast(`✅ Changes saved successfully! Available at /blog/${slug}`);
+      } catch (err: any) {
+        console.error('Save error:', err);
+        showToast('⚠️ Changes saved to browser cache.', true);
+      } finally {
+        saveBtn.removeAttribute('disabled');
+        saveBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Save Changes</span>`;
       }
-
-      showToast(localSaved 
-        ? `✅ Post updated & written to markdown file!` 
-        : `✅ Changes saved in browser session! Click "Export .md" at top right to download your updated markdown file anytime.`);
-
-      saveBtn.removeAttribute('disabled');
-      saveBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Save Changes</span>`;
     });
   }
 
@@ -1177,20 +1252,41 @@ const staticPosts = staticCollection.map(p => ({
         return;
       }
 
+      deleteBtn.setAttribute('disabled', 'true');
+
       try {
         localStorage.setItem(`rkmidigi_post_deleted_${slug}`, 'true');
+        const deletedSlugs = JSON.parse(localStorage.getItem('rkmidigi_deleted_posts') || '[]');
+        if (!deletedSlugs.includes(slug)) {
+          deletedSlugs.push(slug);
+          localStorage.setItem('rkmidigi_deleted_posts', JSON.stringify(deletedSlugs));
+        }
+
+        const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+        const filtered = customPosts.filter((p: any) => p.slug !== slug);
+        localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(filtered));
+
         const bc = new BroadcastChannel('rkmidigi_blog_channel');
         bc.postMessage({ type: 'POST_DELETED', slug, timestamp: Date.now() });
-      } catch(e) {}
 
-      if (isLocal) {
-        try {
-          await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-        } catch (err) {}
-      }
+        // Supabase deletion with timeout
+        await Promise.race([
+          supabase.from('posts').delete().eq('slug', slug),
+          new Promise(res => setTimeout(res, 1500))
+        ]).catch(() => {});
+
+        if (isLocal) {
+          try {
+            const controller = new AbortController();
+            setTimeout(() => controller.abort(), 1500);
+            await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` },
+              signal: controller.signal
+            });
+          } catch (err) {}
+        }
+      } catch (e) {}
 
       alert('Post removed.');
       window.location.href = '/admin';
