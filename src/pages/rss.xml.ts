@@ -9,7 +9,7 @@ export async function GET(context: APIContext) {
   return rss({
     title: 'RKMIDIGILABS — AI Governance & GRC Blog',
     description: 'Daily analysis and video breakdowns on EU AI Act, NIST AI RMF, ISO 42001, and Enterprise GRC by RKMIDIGILABS.',
-    site: context.site || 'https://aigov-grc.example.com',
+    site: context.site || 'https://rkmidigilabs.vercel.app',
     items: sortedPosts.map(post => ({
       title: post.data.title,
       pubDate: post.data.date,

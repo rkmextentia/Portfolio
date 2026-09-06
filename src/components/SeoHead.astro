@@ -25,7 +25,7 @@ const {
 
 const siteTitle = `${title} | RKMIDIGILABS — AI Governance & Enterprise GRC Practice`;
 const ytInfo = youtubeUrl ? getYouTubeInfo(youtubeUrl) : null;
-const resolvedImage = ytInfo ? ytInfo.thumbnailMaxRes : new URL(image, Astro.site || 'https://aigov-grc.example.com').href;
+const resolvedImage = ytInfo ? ytInfo.thumbnailMaxRes : new URL(image, Astro.site || 'https://rkmidigilabs.vercel.app').href;
 
 // Keywords generation
 const baseKeywords = "AI Governance, AIGP, Enterprise GRC, EU AI Act, NIST AI RMF, ISO 42001, ISO 27001, SOC 2, AI Safety, Corporate Training, RKMIDIGILABS";
@@ -38,8 +38,8 @@ const jsonLdOrg = {
   "name": "RKMIDIGILABS",
   "alternateName": "RKM DigiLabs",
   "description": "Executive AI Governance, Enterprise GRC Advisory, and Corporate Training by RKMIDIGILABS.",
-  "url": new URL('/', Astro.site || 'https://aigov-grc.example.com').href,
-  "logo": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href,
+  "url": new URL('/', Astro.site || 'https://rkmidigilabs.vercel.app').href,
+  "logo": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://rkmidigilabs.vercel.app').href,
   "email": "rkmvedant@gmail.com",
   "telephone": "+919371650121",
   "address": {
@@ -68,11 +68,11 @@ const jsonLdWebSite = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "RKMIDIGILABS",
-  "url": new URL('/', Astro.site || 'https://aigov-grc.example.com').href,
+  "url": new URL('/', Astro.site || 'https://rkmidigilabs.vercel.app').href,
   "publisher": {
     "@type": "Organization",
     "name": "RKMIDIGILABS",
-    "logo": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href
+    "logo": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://rkmidigilabs.vercel.app').href
   }
 };
 
@@ -91,14 +91,14 @@ const jsonLdArticle = type === "article" ? {
   "author": {
     "@type": "Organization",
     "name": "RKMIDIGILABS",
-    "url": new URL('/', Astro.site || 'https://aigov-grc.example.com').href
+    "url": new URL('/', Astro.site || 'https://rkmidigilabs.vercel.app').href
   },
   "publisher": {
     "@type": "Organization",
     "name": "RKMIDIGILABS",
     "logo": {
       "@type": "ImageObject",
-      "url": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href
+      "url": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://rkmidigilabs.vercel.app').href
     }
   },
   "keywords": keywordsString
@@ -118,7 +118,7 @@ const jsonLdVideo = ytInfo ? {
     "name": "RKMIDIGILABS",
     "logo": {
       "@type": "ImageObject",
-      "url": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://aigov-grc.example.com').href
+      "url": new URL('/images/rkmidigilabs-logo.jpg', Astro.site || 'https://rkmidigilabs.vercel.app').href
     }
   }
 } : null;
