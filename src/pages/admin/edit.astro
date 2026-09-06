@@ -1,11 +1,29 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const staticCollection = await getCollection('blog');
+const staticPosts = staticCollection.map(p => ({
+  slug: p.slug,
+  title: p.data.title,
+  category: p.data.category,
+  date: p.data.date,
+  readTime: p.data.readTime,
+  summary: p.data.summary,
+  featured: p.data.featured ?? false,
+  youtubeUrl: p.data.youtubeUrl || '',
+  image: p.data.image || '',
+  tags: p.data.tags || [],
+  published: p.data.published ?? true,
+  body: p.body || ''
+}));
 ---
 
 <BaseLayout 
   title="Edit Article — RKMIDIGILABS Studio" 
   description="Edit blog articles and video posts for RKMIDIGILABS."
 >
+  <script id="admin-static-posts" type="application/json" set:html={JSON.stringify(staticPosts)} />
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Header with Back Link & Action Buttons -->
@@ -657,31 +675,30 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   if (togglePublishBtn) {
     togglePublishBtn.addEventListener('click', async () => {
       togglePublishBtn.classList.add('opacity-50', 'pointer-events-none');
+      currentPublished = !currentPublished;
+      renderPublishButton();
+
+      // Broadcast and cache in localStorage
       try {
-        const res = await fetch(`${API_BASE}/api/admin/posts/${slug}/toggle-publish`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) {
-          currentPublished = data.published;
-          renderPublishButton();
-          showToast(data.message || (data.published ? 'Post published!' : 'Post unpublished (draft)!'));
-          try {
-            const bc = new BroadcastChannel('rkmidigi_blog_channel');
-            bc.postMessage({ type: 'POST_PUBLISH_TOGGLED', slug, published: data.published, timestamp: Date.now() });
-          } catch(e) {}
-          try {
-            localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, published: data.published, timestamp: Date.now() }));
-          } catch(e) {}
-        } else {
-          showToast(data.error || 'Failed to toggle publish status.', true);
-        }
-      } catch (err) {
-        showToast('Network error toggling publish status.', true);
-      } finally {
-        togglePublishBtn.classList.remove('opacity-50', 'pointer-events-none');
+        const bc = new BroadcastChannel('rkmidigi_blog_channel');
+        bc.postMessage({ type: 'POST_PUBLISH_TOGGLED', slug, published: currentPublished, timestamp: Date.now() });
+      } catch(e) {}
+      try {
+        localStorage.setItem('rkmidigi_post_toggle', JSON.stringify({ slug, published: currentPublished, timestamp: Date.now() }));
+      } catch(e) {}
+
+      // If running locally, also attempt local API update
+      if (isLocal) {
+        try {
+          await fetch(`${API_BASE}/api/admin/posts/${slug}/toggle-publish`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        } catch (err) {}
       }
+
+      showToast(currentPublished ? 'Post status: Published!' : 'Post status: Unpublished (Draft)!');
+      togglePublishBtn.classList.remove('opacity-50', 'pointer-events-none');
     });
   }
 
@@ -731,63 +748,110 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
   }
 
+  function populateEditor(p: any) {
+    postDate = p.date || '';
+
+    titleInput.value = p.title || '';
+    if (prevTitle) prevTitle.textContent = p.title || '';
+
+    catSelect.value = p.category || 'AI Governance';
+    if (prevCategory) prevCategory.textContent = catSelect.value;
+
+    readTimeInput.value = p.readTime || '4 min read';
+    if (prevReadTime) prevReadTime.textContent = readTimeInput.value;
+
+    featuredInput.checked = p.featured === true || p.featured === 'true';
+
+    videoInput.value = p.youtubeUrl || '';
+    postImage.value = p.image || '';
+
+    if (p.image && imagePreviewBox && imagePreviewThumb && imagePreviewName && imagePreviewUrl) {
+      imagePreviewThumb.src = p.image;
+      imagePreviewName.textContent = p.image.split('/').pop() || 'diagram';
+      imagePreviewUrl.textContent = p.image;
+      imagePreviewBox.classList.remove('hidden');
+    }
+
+    updateCoverPreview();
+
+    summaryInput.value = p.summary || '';
+    if (prevSummary) prevSummary.textContent = p.summary || '';
+    if (summaryCounter) summaryCounter.textContent = `${summaryInput.value.length} / 220 chars`;
+
+    const tags = Array.isArray(p.tags) ? p.tags : [];
+    tagsInput.value = tags.join(', ');
+    if (prevTagsContainer) {
+      prevTagsContainer.innerHTML = tags.map((t: string) => `
+        <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">#${t}</span>
+      `).join('');
+    }
+
+    bodyInput.value = p.body || '';
+    currentPublished = p.published !== false && p.published !== 'false';
+    renderPublishButton();
+    updateSocialCopy(true);
+
+    if (loadingBox) loadingBox.classList.add('hidden');
+    if (editorContainer) editorContainer.classList.remove('hidden');
+  }
+
   async function loadPost() {
+    let post: any = null;
+
+    // Tier 1: Look in static posts bundled at build time from content/blog/
     try {
-      const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success && data.post) {
-        const p = data.post;
-        postDate = p.date || '';
-
-        titleInput.value = p.title || '';
-        if (prevTitle) prevTitle.textContent = p.title || '';
-
-        catSelect.value = p.category || 'AI Governance';
-        if (prevCategory) prevCategory.textContent = catSelect.value;
-
-        readTimeInput.value = p.readTime || '4 min read';
-        if (prevReadTime) prevReadTime.textContent = readTimeInput.value;
-
-        featuredInput.checked = p.featured === true || p.featured === 'true';
-
-        videoInput.value = p.youtubeUrl || '';
-        postImage.value = p.image || '';
-
-        if (p.image && imagePreviewBox && imagePreviewThumb && imagePreviewName && imagePreviewUrl) {
-          imagePreviewThumb.src = p.image;
-          imagePreviewName.textContent = p.image.split('/').pop() || 'diagram';
-          imagePreviewUrl.textContent = p.image;
-          imagePreviewBox.classList.remove('hidden');
-        }
-
-        updateCoverPreview();
-
-        summaryInput.value = p.summary || '';
-        if (prevSummary) prevSummary.textContent = p.summary || '';
-        if (summaryCounter) summaryCounter.textContent = `${summaryInput.value.length} / 220 chars`;
-
-        const tags = Array.isArray(p.tags) ? p.tags : [];
-        tagsInput.value = tags.join(', ');
-        if (prevTagsContainer) {
-          prevTagsContainer.innerHTML = tags.map((t: string) => `
-            <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">#${t}</span>
-          `).join('');
-        }
-
-        bodyInput.value = p.body || '';
-        currentPublished = p.published !== false && p.published !== 'false';
-        renderPublishButton();
-        updateSocialCopy(true);
-
-        if (loadingBox) loadingBox.classList.add('hidden');
-        if (editorContainer) editorContainer.classList.remove('hidden');
-      } else {
-        showToast(data.error || 'Could not load article', true);
+      const staticEl = document.getElementById('admin-static-posts');
+      if (staticEl && staticEl.textContent) {
+        const posts = JSON.parse(staticEl.textContent);
+        post = posts.find((item: any) => item.slug === slug);
       }
-    } catch (err) {
-      showToast('Network error loading post from server.', true);
+    } catch (e) {}
+
+    // Tier 2: Check for locally drafted edits in localStorage
+    try {
+      const cached = localStorage.getItem(`rkmidigi_post_edit_${slug}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        post = { ...(post || {}), ...parsed };
+      }
+      const toggle = localStorage.getItem('rkmidigi_post_toggle');
+      if (toggle) {
+        const t = JSON.parse(toggle);
+        if (t.slug === slug && typeof t.published === 'boolean') {
+          if (post) post.published = t.published;
+        }
+      }
+    } catch (e) {}
+
+    // Tier 3: If running locally with Node server, fetch live disk version
+    if (isLocal) {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.post) {
+            post = data.post;
+          }
+        }
+      } catch (err) {
+        // Fall back seamlessly to static post
+      }
+    }
+
+    if (post) {
+      populateEditor(post);
+    } else {
+      if (loadingBox) {
+        loadingBox.innerHTML = `
+          <div class="py-8 text-center">
+            <p class="text-red-600 font-bold mb-2">Article not found: <span class="font-mono">${slug}</span></p>
+            <p class="text-xs text-slate-500 mb-4">Please verify the article slug or create a new article in Admin Studio.</p>
+            <a href="/admin" class="text-xs font-bold text-[#16A34A] underline hover:text-[#15803D]">← Return to Admin Studio</a>
+          </div>
+        `;
+      }
     }
   }
 
@@ -1053,97 +1117,83 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       saveBtn.setAttribute('disabled', 'true');
       saveBtn.innerHTML = `<span>Saving Changes...</span>`;
 
+      const postData = {
+        title,
+        slug,
+        date: postDate,
+        category,
+        readTime,
+        featured,
+        youtubeUrl,
+        image,
+        summary,
+        tags,
+        published: currentPublished,
+        body
+      };
+
+      // 1. Cache to localStorage
       try {
-        const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            title,
-            slug,
-            date: postDate,
-            category,
-            readTime,
-            featured,
-            youtubeUrl,
-            image,
-            summary,
-            tags,
-            published: currentPublished,
-            body
-          })
-        });
+        localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(postData));
+        localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: currentPublished, timestamp: Date.now() }));
+      } catch(e) {}
 
-        const data = await res.json();
-        if (data.success) {
-          // Broadcast to other tabs
-          try {
-            const bc = new BroadcastChannel('rkmidigi_blog_channel');
-            bc.postMessage({ type: 'POST_UPDATED', slug, published: currentPublished, timestamp: Date.now() });
-          } catch(e) {}
-          try {
-            localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: currentPublished, timestamp: Date.now() }));
-          } catch(e) {}
-          // Auto Webhook Push if enabled
-          if (autoWebhookPush && autoWebhookPush.checked) {
-            try {
-              await fetch(`${API_BASE}/api/admin/social-push`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  title,
-                  summary,
-                  url: `/blog/${slug}`,
-                  customCopy: socialCopyArea?.value,
-                  tags
-                })
-              });
-            } catch (pushErr) {}
-          }
+      // 2. Broadcast to other open tabs
+      try {
+        const bc = new BroadcastChannel('rkmidigi_blog_channel');
+        bc.postMessage({ type: 'POST_UPDATED', slug, published: currentPublished, timestamp: Date.now() });
+      } catch(e) {}
 
-          showToast(`✅ Post updated & broadcasted!`);
-          setTimeout(() => {
-            window.location.href = '/admin';
-          }, 1200);
-        } else {
-          showToast(data.error || 'Failed to update post', true);
-        }
-      } catch (err) {
-        showToast('Network error contacting Admin API server on port 4322.', true);
-      } finally {
-        saveBtn.removeAttribute('disabled');
-        saveBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Save Changes</span>`;
+      // 3. If running locally with Node server, write to file on disk
+      let localSaved = false;
+      if (isLocal) {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(postData)
+          });
+          const data = await res.json();
+          if (data.success) localSaved = true;
+        } catch (err) {}
       }
+
+      showToast(localSaved 
+        ? `✅ Post updated & written to markdown file!` 
+        : `✅ Changes saved in browser session! Click "Export .md" at top right to download your updated markdown file anytime.`);
+
+      saveBtn.removeAttribute('disabled');
+      saveBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Save Changes</span>`;
     });
   }
 
   // Delete
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
-      if (!confirm(`Are you sure you want to permanently delete "${titleInput.value}"?\n\nThis removes the markdown file src/content/blog/${slug}.md.`)) {
+      if (!confirm(`Are you sure you want to remove "${titleInput.value}" from the active post view?`)) {
         return;
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert('Post deleted.');
-          window.location.href = '/admin';
-        } else {
-          showToast(data.error || 'Failed to delete post.', true);
-        }
-      } catch (err) {
-        showToast('Network error deleting post.', true);
+        localStorage.setItem(`rkmidigi_post_deleted_${slug}`, 'true');
+        const bc = new BroadcastChannel('rkmidigi_blog_channel');
+        bc.postMessage({ type: 'POST_DELETED', slug, timestamp: Date.now() });
+      } catch(e) {}
+
+      if (isLocal) {
+        try {
+          await fetch(`${API_BASE}/api/admin/posts/${slug}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        } catch (err) {}
       }
+
+      alert('Post removed.');
+      window.location.href = '/admin';
     });
   }
 

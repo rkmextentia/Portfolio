@@ -1005,71 +1005,56 @@ Write your executive brief here...
       publishBtn.setAttribute('disabled', 'true');
       publishBtn.innerHTML = `<span>Saving & Publishing...</span>`;
 
+      const newPostData = {
+        title,
+        slug,
+        category,
+        readTime,
+        featured,
+        published: isPublished,
+        youtubeUrl,
+        image,
+        summary,
+        tags,
+        body
+      };
+
+      // 1. Cache to localStorage
       try {
-        const res = await fetch(`${API_BASE}/api/admin/posts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            title,
-            slug,
-            category,
-            readTime,
-            featured,
-            published: isPublished,
-            youtubeUrl,
-            image,
-            summary,
-            tags,
-            body
-          })
-        });
+        localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(newPostData));
+        localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: isPublished, timestamp: Date.now() }));
+      } catch(e) {}
 
-        const data = await res.json();
-        if (data.success) {
-          // Broadcast to other tabs
-          try {
-            const bc = new BroadcastChannel('rkmidigi_blog_channel');
-            bc.postMessage({ type: 'POST_CREATED', slug, published: isPublished, timestamp: Date.now() });
-          } catch(e) {}
-          try {
-            localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: isPublished, timestamp: Date.now() }));
-          } catch(e) {}
-          // Auto Webhook Push if enabled
-          if (autoWebhookPush && autoWebhookPush.checked) {
-            try {
-              await fetch(`${API_BASE}/api/admin/social-push`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  title,
-                  summary,
-                  url: `/blog/${slug}`,
-                  customCopy: socialCopyArea?.value,
-                  tags
-                })
-              });
-            } catch (pushErr) {}
-          }
+      // 2. Broadcast to other open tabs
+      try {
+        const bc = new BroadcastChannel('rkmidigi_blog_channel');
+        bc.postMessage({ type: 'POST_CREATED', slug, published: isPublished, timestamp: Date.now() });
+      } catch(e) {}
 
-          showToast(`✅ Post published & broadcasted! Available at /blog/${slug}`);
-          setTimeout(() => {
-            window.location.href = '/admin';
-          }, 1500);
-        } else {
-          showToast(data.error || 'Failed to save post', true);
-        }
-      } catch (err) {
-        showToast('Network error contacting Admin API server on port 4322.', true);
-      } finally {
-        publishBtn.removeAttribute('disabled');
-        publishBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>Publish to Website</span>`;
+      // 3. If running locally with Node server, write file to disk
+      let localSaved = false;
+      if (isLocal) {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/posts`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(newPostData)
+          });
+          const data = await res.json();
+          if (data.success) localSaved = true;
+        } catch (err) {}
       }
+
+      showToast(localSaved 
+        ? `✅ Post published to local filesystem! Available at /blog/${slug}` 
+        : `✅ Post saved in browser session! Use "Export .md" button at top to download the markdown file anytime.`);
+
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 1500);
     });
   }
 </script>
