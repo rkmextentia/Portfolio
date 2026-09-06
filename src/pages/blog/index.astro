@@ -141,316 +141,358 @@ const filterTabs = [
 
   </div>
 
-  <script is:inline>
-    (function() {
-      var API_BASE = 'http://localhost:4322';
+  <script>
+    import { supabase } from '../../lib/supabase';
 
-      function initBlogLiveSync() {
-        var buttons = document.querySelectorAll('.filter-btn');
-        var searchInput = document.getElementById('blog-search');
-        var emptyState = document.getElementById('empty-state');
-        var visibleCountEl = document.getElementById('visible-post-count');
-        var totalPublishedCountEl = document.getElementById('total-published-count');
-        var resetBtn = document.getElementById('reset-filter-btn');
-        var emptyResetBtn = document.getElementById('empty-reset-btn');
-        var postsGrid = document.getElementById('posts-grid');
+    function initBlogLiveSync() {
+      const buttons = document.querySelectorAll('.filter-btn');
+      const searchInput = document.getElementById('blog-search') as HTMLInputElement | null;
+      const emptyState = document.getElementById('empty-state');
+      const visibleCountEl = document.getElementById('visible-post-count');
+      const totalPublishedCountEl = document.getElementById('total-published-count');
+      const resetBtn = document.getElementById('reset-filter-btn');
+      const emptyResetBtn = document.getElementById('empty-reset-btn');
+      const postsGrid = document.getElementById('posts-grid');
 
-        var currentCategory = 'All';
+      let currentCategory = 'All';
 
-        function updateBadgeCounts() {
-          var allWrappers = document.querySelectorAll('.post-wrapper');
-          var publishedWrappers = Array.from(allWrappers).filter(function(w) {
-            return w.getAttribute('data-published') === 'true';
-          });
+      function updateBadgeCounts() {
+        const allWrappers = document.querySelectorAll('.post-wrapper');
+        const publishedWrappers = Array.from(allWrappers).filter(w => w.getAttribute('data-published') === 'true');
 
-          var totalPub = publishedWrappers.length;
-          var videoPub = publishedWrappers.filter(function(w) {
-            return w.getAttribute('data-has-video') === 'true';
-          }).length;
-          var aiGovPub = publishedWrappers.filter(function(w) {
-            return w.getAttribute('data-category') === 'AI Governance';
-          }).length;
-          var grcPub = publishedWrappers.filter(function(w) {
-            return w.getAttribute('data-category') === 'Enterprise GRC';
-          }).length;
-          var trainingPub = publishedWrappers.filter(function(w) {
-            return w.getAttribute('data-category') === 'Corporate Training';
-          }).length;
-          var alertsPub = publishedWrappers.filter(function(w) {
-            return w.getAttribute('data-category') === 'Regulatory Alerts';
-          }).length;
+        const totalPub = publishedWrappers.length;
+        const videoPub = publishedWrappers.filter(w => w.getAttribute('data-has-video') === 'true').length;
+        const aiGovPub = publishedWrappers.filter(w => w.getAttribute('data-category') === 'AI Governance').length;
+        const grcPub = publishedWrappers.filter(w => w.getAttribute('data-category') === 'Enterprise GRC').length;
+        const trainingPub = publishedWrappers.filter(w => w.getAttribute('data-category') === 'Corporate Training').length;
+        const alertsPub = publishedWrappers.filter(w => w.getAttribute('data-category') === 'Regulatory Alerts').length;
 
-          buttons.forEach(function(btn) {
-            var cat = btn.getAttribute('data-category');
-            var badge = btn.querySelector('.tab-badge') || btn.querySelector('span:last-child');
-            if (!badge) return;
-            if (cat === 'All') badge.textContent = totalPub;
-            else if (cat === 'Videos Only') badge.textContent = videoPub;
-            else if (cat === 'AI Governance') badge.textContent = aiGovPub;
-            else if (cat === 'Enterprise GRC') badge.textContent = grcPub;
-            else if (cat === 'Corporate Training') badge.textContent = trainingPub;
-            else if (cat === 'Regulatory Alerts') badge.textContent = alertsPub;
-          });
-
-          if (totalPublishedCountEl) {
-            totalPublishedCountEl.textContent = totalPub;
-          }
-        }
-
-        function applyFilter() {
-          var allWrappers = document.querySelectorAll('.post-wrapper');
-          var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-          var visibleCount = 0;
-
-          allWrappers.forEach(function(w) {
-            var isPublished = w.getAttribute('data-published') === 'true';
-            
-            // If post is not published, it MUST be hidden under all conditions!
-            if (!isPublished) {
-              w.classList.add('hidden');
-              w.style.display = 'none';
-              return;
-            }
-
-            var itemCat = w.getAttribute('data-category') || '';
-            var hasVideo = w.getAttribute('data-has-video') === 'true';
-            var title = w.getAttribute('data-title') || '';
-            var summary = w.getAttribute('data-summary') || '';
-            var tags = w.getAttribute('data-tags') || '';
-
-            var categoryMatch = false;
-            if (currentCategory === 'All') {
-              categoryMatch = true;
-            } else if (currentCategory === 'Videos Only') {
-              categoryMatch = hasVideo;
-            } else {
-              categoryMatch = (itemCat === currentCategory);
-            }
-
-            var searchMatch = !query || 
-              title.indexOf(query) !== -1 || 
-              summary.indexOf(query) !== -1 || 
-              tags.indexOf(query) !== -1;
-
-            if (categoryMatch && searchMatch) {
-              w.classList.remove('hidden');
-              w.style.display = '';
-              visibleCount++;
-            } else {
-              w.classList.add('hidden');
-              w.style.display = 'none';
-            }
-          });
-
-          if (visibleCountEl) {
-            visibleCountEl.textContent = visibleCount;
-          }
-
-          if (emptyState) {
-            if (visibleCount === 0) {
-              emptyState.classList.remove('hidden');
-            } else {
-              emptyState.classList.add('hidden');
-            }
-          }
-
-          if (resetBtn) {
-            if (currentCategory !== 'All' || query.length > 0) {
-              resetBtn.classList.remove('hidden');
-            } else {
-              resetBtn.classList.add('hidden');
-            }
-          }
-        }
-
-        // Real-time synchronization with Admin API
-        async function syncLivePosts() {
-          try {
-            var res = await fetch(`${API_BASE}/api/public/posts?_t=${Date.now()}`);
-            if (!res.ok) return;
-            var data = await res.json();
-            if (!data.success || !Array.isArray(data.posts)) return;
-
-            var postsMap = {};
-            data.posts.forEach(function(p) {
-              postsMap[p.slug] = p;
-            });
-
-            var allWrappers = document.querySelectorAll('.post-wrapper');
-            var existingSlugs = new Set();
-
-            allWrappers.forEach(function(w) {
-              var slug = w.getAttribute('data-slug');
-              if (!slug) return;
-              existingSlugs.add(slug);
-
-              var livePost = postsMap[slug];
-              if (livePost) {
-                var isPub = livePost.published !== false;
-                w.setAttribute('data-published', isPub ? 'true' : 'false');
-                if (!isPub) {
-                  w.classList.add('hidden');
-                  w.style.display = 'none';
-                }
-              }
-            });
-
-            // Dynamically inject any newly published posts not present in initial HTML
-            data.posts.forEach(function(p) {
-              if (p.published && !existingSlugs.has(p.slug) && postsGrid) {
-                var cardDiv = document.createElement('div');
-                cardDiv.className = 'post-wrapper transition-all duration-200';
-                cardDiv.setAttribute('data-slug', p.slug);
-                cardDiv.setAttribute('data-category', p.category || 'Enterprise GRC');
-                cardDiv.setAttribute('data-has-video', p.youtubeUrl ? 'true' : 'false');
-                cardDiv.setAttribute('data-title', (p.title || '').toLowerCase());
-                cardDiv.setAttribute('data-summary', (p.summary || '').toLowerCase());
-                cardDiv.setAttribute('data-tags', (Array.isArray(p.tags) ? p.tags.join(' ') : '').toLowerCase());
-                cardDiv.setAttribute('data-published', 'true');
-                
-                var dateStr = p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-                var tagsHtml = (p.tags || []).slice(0, 2).map(function(t) {
-                  return '<span class="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">#' + t + '</span>';
-                }).join('');
-
-                cardDiv.innerHTML = `
-                  <article class="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-400 shadow-sm hover:shadow-md transition-all duration-200 group">
-                    <a href="/blog/${p.slug}" class="relative aspect-video overflow-hidden bg-slate-100 block">
-                      ${p.image ? `<img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />` : `
-                        <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-                          <svg class="w-12 h-12 stroke-current opacity-40" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
-                        </div>
-                      `}
-                      <div class="absolute top-3 left-3">
-                        <span class="px-2.5 py-1 rounded text-[11px] font-bold tracking-wide uppercase bg-slate-100 text-slate-800 shadow-sm border border-slate-300">
-                          ${p.category || 'Enterprise GRC'}
-                        </span>
-                      </div>
-                      ${p.youtubeUrl ? `
-                        <div class="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold shadow-sm">
-                          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                          <span>VIDEO</span>
-                        </div>
-                      ` : ''}
-                    </a>
-                    <div class="flex-1 p-5 sm:p-6 flex flex-col justify-between">
-                      <div>
-                        <div class="flex items-center gap-2 text-xs text-slate-500 font-mono mb-2">
-                          <time>${dateStr}</time>
-                          <span>•</span>
-                          <span>${p.readTime || '4 min read'}</span>
-                        </div>
-                        <h3 class="text-base sm:text-lg font-black text-black group-hover:text-[#16A34A] transition-colors leading-snug line-clamp-2">
-                          <a href="/blog/${p.slug}">${p.title}</a>
-                        </h3>
-                        <p class="mt-2 text-sm text-slate-700 line-clamp-2 leading-relaxed font-normal">${p.summary || ''}</p>
-                      </div>
-                      <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex flex-wrap gap-1.5">${tagsHtml}</div>
-                        <a href="/blog/${p.slug}" class="text-xs font-bold text-[#16A34A] hover:text-[#15803D] flex items-center gap-1">
-                          Read Article
-                          <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                        </a>
-                      </div>
-                    </div>
-                  </article>
-                `;
-                postsGrid.appendChild(cardDiv);
-              }
-            });
-
-            updateBadgeCounts();
-            applyFilter();
-          } catch (e) {
-            console.warn('Could not sync with live posts API:', e);
-          }
-        }
-
-        buttons.forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            buttons.forEach(function(b) {
-              b.classList.remove('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
-              b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
-              var badge = b.querySelector('.tab-badge') || b.querySelector('span:last-child');
-              if (badge) {
-                badge.className = 'tab-badge text-[11px] px-1.5 py-0.2 rounded-full font-mono font-bold bg-slate-100 text-slate-600';
-              }
-            });
-
-            btn.classList.add('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
-            btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
-            var activeBadge = btn.querySelector('.tab-badge') || btn.querySelector('span:last-child');
-            if (activeBadge) {
-              activeBadge.className = 'tab-badge text-[11px] px-1.5 py-0.2 rounded-full font-mono font-bold bg-slate-700 text-white';
-            }
-
-            currentCategory = btn.getAttribute('data-category') || 'All';
-            applyFilter();
-          });
+        buttons.forEach(btn => {
+          const cat = btn.getAttribute('data-category');
+          const badge = btn.querySelector('.tab-badge') || btn.querySelector('span:last-child');
+          if (!badge) return;
+          if (cat === 'All') badge.textContent = totalPub.toString();
+          else if (cat === 'Videos Only') badge.textContent = videoPub.toString();
+          else if (cat === 'AI Governance') badge.textContent = aiGovPub.toString();
+          else if (cat === 'Enterprise GRC') badge.textContent = grcPub.toString();
+          else if (cat === 'Corporate Training') badge.textContent = trainingPub.toString();
+          else if (cat === 'Regulatory Alerts') badge.textContent = alertsPub.toString();
         });
 
-        if (searchInput) {
-          searchInput.addEventListener('input', applyFilter);
+        if (totalPublishedCountEl) {
+          totalPublishedCountEl.textContent = totalPub.toString();
+        }
+      }
+
+      function applyFilter() {
+        const allWrappers = document.querySelectorAll('.post-wrapper');
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        let visibleCount = 0;
+
+        allWrappers.forEach(w => {
+          const isPublished = w.getAttribute('data-published') === 'true';
+          if (!isPublished) {
+            w.classList.add('hidden');
+            (w as HTMLElement).style.display = 'none';
+            return;
+          }
+
+          const itemCat = w.getAttribute('data-category') || '';
+          const hasVideo = w.getAttribute('data-has-video') === 'true';
+          const title = w.getAttribute('data-title') || '';
+          const summary = w.getAttribute('data-summary') || '';
+          const tags = w.getAttribute('data-tags') || '';
+
+          let categoryMatch = false;
+          if (currentCategory === 'All') {
+            categoryMatch = true;
+          } else if (currentCategory === 'Videos Only') {
+            categoryMatch = hasVideo;
+          } else {
+            categoryMatch = (itemCat === currentCategory);
+          }
+
+          const searchMatch = !query || 
+            title.indexOf(query) !== -1 || 
+            summary.indexOf(query) !== -1 || 
+            tags.indexOf(query) !== -1;
+
+          if (categoryMatch && searchMatch) {
+            w.classList.remove('hidden');
+            (w as HTMLElement).style.display = '';
+            visibleCount++;
+          } else {
+            w.classList.add('hidden');
+            (w as HTMLElement).style.display = 'none';
+          }
+        });
+
+        if (visibleCountEl) visibleCountEl.textContent = visibleCount.toString();
+
+        if (emptyState) {
+          if (visibleCount === 0) emptyState.classList.remove('hidden');
+          else emptyState.classList.add('hidden');
         }
 
-        function resetAll() {
-          currentCategory = 'All';
-          if (searchInput) searchInput.value = '';
-          buttons.forEach(function(b, idx) {
-            if (idx === 0) {
-              b.classList.add('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
-              b.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
-            } else {
-              b.classList.remove('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
-              b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
-            }
-          });
-          applyFilter();
+        if (resetBtn) {
+          if (currentCategory !== 'All' || query.length > 0) resetBtn.classList.remove('hidden');
+          else resetBtn.classList.add('hidden');
         }
+      }
 
-        if (resetBtn) resetBtn.addEventListener('click', resetAll);
-        if (emptyResetBtn) emptyResetBtn.addEventListener('click', resetAll);
+      // Real-time synchronization with Supabase, LocalStorage, and Admin API
+      async function syncLivePosts() {
+        const livePostsMap: Record<string, any> = {};
 
-        // Initial setup
-        applyFilter();
-        syncLivePosts();
-
-        // 1. Instant tab-to-tab sync via BroadcastChannel
+        // 1. Load custom posts from localStorage (instant, client-side)
         try {
-          var bc = new BroadcastChannel('rkmidigi_blog_channel');
-          bc.onmessage = function(event) {
-            if (event.data && (event.data.type === 'POST_PUBLISH_TOGGLED' || event.data.type === 'POST_CREATED' || event.data.type === 'POST_DELETED')) {
-              syncLivePosts();
-            }
-          };
+          const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
+          if (Array.isArray(customPosts)) {
+            customPosts.forEach((p: any) => {
+              if (p.slug) livePostsMap[p.slug] = p;
+            });
+          }
         } catch(e) {}
 
-        // 2. Storage event listener for cross-tab updates
-        window.addEventListener('storage', function(e) {
-          if (e.key === 'rkmidigi_post_toggle' || e.key === 'rkmidigi_post_update') {
-            syncLivePosts();
+        // 2. Load published posts from Supabase database (cloud sync)
+        try {
+          const sbPromise = supabase.from('posts').select('*');
+          const timeoutPromise = new Promise(r => setTimeout(r, 2000));
+          const res: any = await Promise.race([sbPromise, timeoutPromise]);
+          if (res && Array.isArray(res.data)) {
+            res.data.forEach((sp: any) => {
+              livePostsMap[sp.slug] = {
+                slug: sp.slug,
+                title: sp.title,
+                category: sp.category,
+                date: sp.date,
+                readTime: sp.read_time,
+                featured: sp.featured,
+                published: sp.published,
+                youtubeUrl: sp.youtube_url,
+                image: sp.image,
+                summary: sp.summary,
+                tags: Array.isArray(sp.tags) ? sp.tags : [],
+                body: sp.body,
+                author: sp.author || 'RKMIDIGILABS'
+              };
+            });
+          }
+        } catch(e) {}
+
+        // 3. If local development server is active, also sync from disk
+        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (isLocal) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1000);
+            const res = await fetch(`http://localhost:4322/api/public/posts?_t=${Date.now()}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.posts)) {
+                data.posts.forEach((p: any) => {
+                  livePostsMap[p.slug] = p;
+                });
+              }
+            }
+          } catch(e) {}
+        }
+
+        // 4. Deleted slugs check
+        let deletedSlugs: string[] = [];
+        try {
+          deletedSlugs = JSON.parse(localStorage.getItem('rkmidigi_deleted_posts') || '[]');
+        } catch(e) {}
+
+        // 5. Publish / Draft toggle overrides
+        let toggles: Record<string, boolean> = {};
+        try {
+          toggles = JSON.parse(localStorage.getItem('rkmidigi_post_toggles') || '{}');
+        } catch(e) {}
+
+        const allWrappers = document.querySelectorAll('.post-wrapper');
+        const existingSlugs = new Set<string>();
+
+        allWrappers.forEach(w => {
+          const slug = w.getAttribute('data-slug');
+          if (!slug) return;
+          existingSlugs.add(slug);
+
+          if (deletedSlugs.includes(slug)) {
+            w.remove();
+            return;
+          }
+
+          let isPub = true;
+          if (typeof toggles[slug] === 'boolean') {
+            isPub = toggles[slug];
+          } else if (livePostsMap[slug] && typeof livePostsMap[slug].published === 'boolean') {
+            isPub = livePostsMap[slug].published !== false;
+          }
+
+          w.setAttribute('data-published', isPub ? 'true' : 'false');
+          if (!isPub) {
+            w.classList.add('hidden');
+            (w as HTMLElement).style.display = 'none';
           }
         });
 
-        // 3. Re-sync immediately on window focus / tab visibility
-        window.addEventListener('focus', function() {
+        // 6. Dynamically inject any custom / Supabase posts not present in initial HTML
+        Object.values(livePostsMap).forEach((p: any) => {
+          if (!p.slug || existingSlugs.has(p.slug) || deletedSlugs.includes(p.slug)) return;
+
+          let isPub = p.published !== false;
+          if (typeof toggles[p.slug] === 'boolean') {
+            isPub = toggles[p.slug];
+          }
+          if (!isPub) return;
+
+          if (postsGrid) {
+            existingSlugs.add(p.slug);
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'post-wrapper transition-all duration-200';
+            cardDiv.setAttribute('data-slug', p.slug);
+            cardDiv.setAttribute('data-category', p.category || 'AI Governance');
+            cardDiv.setAttribute('data-has-video', p.youtubeUrl ? 'true' : 'false');
+            cardDiv.setAttribute('data-title', (p.title || '').toLowerCase());
+            cardDiv.setAttribute('data-summary', (p.summary || '').toLowerCase());
+            cardDiv.setAttribute('data-tags', (Array.isArray(p.tags) ? p.tags.join(' ') : '').toLowerCase());
+            cardDiv.setAttribute('data-published', 'true');
+
+            const dateStr = p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            const tagsHtml = (Array.isArray(p.tags) ? p.tags : []).slice(0, 2).map((t: string) => 
+              `<span class="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">#${t}</span>`
+            ).join('');
+
+            cardDiv.innerHTML = `
+              <article class="flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-400 shadow-sm hover:shadow-md transition-all duration-200 group">
+                <a href="/blog/${p.slug}" class="relative aspect-video overflow-hidden bg-slate-100 block">
+                  ${p.image ? `<img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />` : `
+                    <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
+                      <svg class="w-12 h-12 stroke-current opacity-40" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                    </div>
+                  `}
+                  <div class="absolute top-3 left-3">
+                    <span class="px-2.5 py-1 rounded text-[11px] font-bold tracking-wide uppercase bg-slate-100 text-slate-800 shadow-sm border border-slate-300">
+                      ${p.category || 'AI Governance'}
+                    </span>
+                  </div>
+                  ${p.youtubeUrl ? `
+                    <div class="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold shadow-sm">
+                      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <span>VIDEO</span>
+                    </div>
+                  ` : ''}
+                </a>
+                <div class="flex-1 p-5 sm:p-6 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center gap-2 text-xs text-slate-500 font-mono mb-2">
+                      <time>${dateStr}</time>
+                      <span>•</span>
+                      <span>${p.readTime || '4 min read'}</span>
+                    </div>
+                    <h3 class="text-base sm:text-lg font-black text-black group-hover:text-[#16A34A] transition-colors leading-snug line-clamp-2">
+                      <a href="/blog/${p.slug}">${p.title}</a>
+                    </h3>
+                    <p class="mt-2 text-sm text-slate-700 line-clamp-2 leading-relaxed font-normal">${p.summary || ''}</p>
+                  </div>
+                  <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div class="flex flex-wrap gap-1.5">${tagsHtml}</div>
+                    <a href="/blog/${p.slug}" class="text-xs font-bold text-[#16A34A] hover:text-[#15803D] flex items-center gap-1">
+                      Read Article
+                      <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                  </div>
+                </div>
+              </article>
+            `;
+            postsGrid.prepend(cardDiv);
+          }
+        });
+
+        updateBadgeCounts();
+        applyFilter();
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => {
+            b.classList.remove('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
+            b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
+            const badge = b.querySelector('.tab-badge') || b.querySelector('span:last-child');
+            if (badge) {
+              badge.className = 'tab-badge text-[11px] px-1.5 py-0.2 rounded-full font-mono font-bold bg-slate-100 text-slate-600';
+            }
+          });
+
+          btn.classList.add('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
+          btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
+          const activeBadge = btn.querySelector('.tab-badge') || btn.querySelector('span:last-child');
+          if (activeBadge) {
+            activeBadge.className = 'tab-badge text-[11px] px-1.5 py-0.2 rounded-full font-mono font-bold bg-slate-700 text-white';
+          }
+
+          currentCategory = btn.getAttribute('data-category') || 'All';
+          applyFilter();
+        });
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilter);
+      }
+
+      function resetAll() {
+        currentCategory = 'All';
+        if (searchInput) searchInput.value = '';
+        buttons.forEach((b, idx) => {
+          if (idx === 0) {
+            b.classList.add('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
+            b.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
+          } else {
+            b.classList.remove('active-filter', 'bg-[#112649]', 'text-white', 'border-[#112649]', 'shadow-sm');
+            b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
+          }
+        });
+        applyFilter();
+      }
+
+      if (resetBtn) resetBtn.addEventListener('click', resetAll);
+      if (emptyResetBtn) emptyResetBtn.addEventListener('click', resetAll);
+
+      // Initial setup
+      applyFilter();
+      syncLivePosts();
+
+      // 1. Instant tab-to-tab sync via BroadcastChannel
+      try {
+        const bc = new BroadcastChannel('rkmidigi_blog_channel');
+        bc.onmessage = () => { syncLivePosts(); };
+      } catch(e) {}
+
+      // 2. Storage event listener for cross-tab updates
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'rkmidigi_post_toggle' || e.key === 'rkmidigi_post_update' || e.key === 'rkmidigi_custom_posts') {
           syncLivePosts();
-        });
-        document.addEventListener('visibilitychange', function() {
-          if (document.visibilityState === 'visible') {
-            syncLivePosts();
-          }
-        });
+        }
+      });
 
-        // 4. Background polling every 3 seconds for continuous accuracy
-        setInterval(syncLivePosts, 3000);
-      }
+      // 3. Re-sync immediately on window focus / tab visibility
+      window.addEventListener('focus', () => { syncLivePosts(); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          syncLivePosts();
+        }
+      });
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initBlogLiveSync);
-      } else {
-        initBlogLiveSync();
-      }
-    })();
+      // 4. Background polling every 3 seconds
+      setInterval(syncLivePosts, 3000);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBlogLiveSync);
+    } else {
+      initBlogLiveSync();
+    }
   </script>
 </BaseLayout>
