@@ -170,6 +170,7 @@ const filterTabs = [
 
   <script>
     import { supabase } from '../../lib/supabase';
+    import { idbGetAllPosts } from '../../lib/idb';
 
     function initBlogLiveSync() {
       const buttons = document.querySelectorAll('.filter-btn');
@@ -277,6 +278,16 @@ const filterTabs = [
           if (Array.isArray(customPosts)) {
             customPosts.forEach((p: any) => {
               if (p.slug) livePostsMap[p.slug] = p;
+            });
+          }
+        } catch(e) {}
+
+        // 1.5 Load custom posts from IndexedDB (unlimited persistent storage)
+        try {
+          const idbPosts = await idbGetAllPosts();
+          if (Array.isArray(idbPosts)) {
+            idbPosts.forEach((p: any) => {
+              if (p.slug) livePostsMap[p.slug] = { ...(livePostsMap[p.slug] || {}), ...p };
             });
           }
         } catch(e) {}

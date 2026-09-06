@@ -547,6 +547,8 @@ const staticPosts = staticCollection.map(p => ({
 
 <script>
   import { supabase } from '../../lib/supabase';
+  import { idbSavePost, idbGetPost } from '../../lib/idb';
+  import { compressImageFile } from '../../lib/image-compress';
 
   const API_PORT = 4322;
   const isLocal = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) || 
@@ -844,6 +846,16 @@ const staticPosts = staticCollection.map(p => ({
       }
     } catch (e) {}
 
+    // Tier 2.5: Check IndexedDB (unlimited persistent storage)
+    if (!post || !post.body) {
+      try {
+        const idbPost = await idbGetPost(slug);
+        if (idbPost) {
+          post = { ...(post || {}), ...idbPost };
+        }
+      } catch(e) {}
+    }
+
     // Tier 3: Supabase cloud fetch if not yet loaded
     if (!post || !post.body) {
       try {
@@ -944,7 +956,7 @@ const staticPosts = staticCollection.map(p => ({
 
   // Image upload handling (Universal Browser & Cloud Support)
   if (uploadImageBtn && imageFileInput) {
-    uploadImageBtn.addEventListener('click', () => {
+    uploadImageBtn.addEventListener('click', async () => {
       const file = imageFileInput.files?.[0];
       if (!file) {
         alert('Please choose an image file first (PNG, JPG, WebP, GIF).');
@@ -952,11 +964,11 @@ const staticPosts = staticCollection.map(p => ({
       }
 
       uploadImageBtn.setAttribute('disabled', 'true');
-      uploadImageBtn.innerHTML = `<span>Uploading...</span>`;
+      uploadImageBtn.innerHTML = `<span>Optimizing & Uploading...</span>`;
 
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const fileData = e.target?.result as string;
+      try {
+        // Automatically optimize image (max 1280px width, 82% quality) to ensure lightweight payload (< 120KB)
+        const fileData = await compressImageFile(file);
         let uploadedUrl = fileData; // Guaranteed fallback (Data URL)
 
         // 1. Try Supabase storage if available
@@ -975,9 +987,7 @@ const staticPosts = staticCollection.map(p => ({
               uploadedUrl = publicData.publicUrl;
             }
           }
-        } catch (storageErr) {
-          // Continue to next tier
-        }
+        } catch (storageErr) {}
 
         // 2. If running locally, also sync with local filesystem
         if (isLocal) {
@@ -1003,7 +1013,7 @@ const staticPosts = staticCollection.map(p => ({
         if (imagePreviewBox && imagePreviewThumb && imagePreviewName && imagePreviewUrl) {
           imagePreviewThumb.src = uploadedUrl;
           imagePreviewName.textContent = file.name;
-          imagePreviewUrl.textContent = uploadedUrl.startsWith('data:') ? `Data URL (${Math.round(file.size / 1024)} KB)` : uploadedUrl;
+          imagePreviewUrl.textContent = uploadedUrl.startsWith('data:') ? `Optimized Image (${Math.round(uploadedUrl.length / 1024)} KB)` : uploadedUrl;
           imagePreviewBox.classList.remove('hidden');
         }
 
@@ -1024,17 +1034,12 @@ const staticPosts = staticCollection.map(p => ({
         }
 
         showToast(`✅ Image uploaded and inserted into article!`);
+      } catch (err) {
+        showToast('Failed to process image file.', true);
+      } finally {
         uploadImageBtn.removeAttribute('disabled');
         uploadImageBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Upload & Insert</span>`;
-      };
-
-      reader.onerror = () => {
-        showToast('Failed to read image file.', true);
-        uploadImageBtn.removeAttribute('disabled');
-        uploadImageBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Upload & Insert</span>`;
-      };
-
-      reader.readAsDataURL(file);
+      }
     });
   }
 
@@ -1209,16 +1214,38 @@ const staticPosts = staticCollection.map(p => ({
           author: 'RKMIDIGILABS'
         };
 
-        // 1. Cache to localStorage instantly
+        // 1. Persistent storage in IndexedDB (unlimited quota, handles large images & markdown)
+        try {
+          await idbSavePost(postData);
+        } catch (idbErr) {
+          console.warn('idbSavePost error:', idbErr);
+        }
+
+        // 2. Cache to localStorage instantly (with QuotaExceededError protection)
         try {
           // Update custom posts array if present
           const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
           const cpIdx = customPosts.findIndex((p: any) => p.slug === slug);
           if (cpIdx > -1) {
             customPosts[cpIdx] = { ...customPosts[cpIdx], ...postData };
-            localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(customPosts));
+          } else {
+            customPosts.unshift(postData);
           }
-          localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(postData));
+
+          try {
+            localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(customPosts));
+            localStorage.setItem(`rkmidigi_post_edit_${slug}`, JSON.stringify(postData));
+          } catch (quotaErr) {
+            console.warn('localStorage quota reached, storing lightweight index in localStorage', quotaErr);
+            const lightPosts = customPosts.map((p: any) => ({
+              ...p,
+              body: p.body && p.body.length > 3000 ? p.body.substring(0, 500) + '\n\n[Content stored in IndexedDB]' : p.body,
+              image: p.image && p.image.length > 3000 ? '' : p.image
+            }));
+            try {
+              localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(lightPosts));
+            } catch(e2) {}
+          }
           localStorage.setItem('rkmidigi_post_update', JSON.stringify({ slug, published: currentPublished, timestamp: Date.now() }));
         } catch(e) {}
 

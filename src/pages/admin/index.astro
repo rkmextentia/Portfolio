@@ -830,6 +830,7 @@ const staticPosts = staticCollection.map(p => ({
     adminGrantCourseAccess, 
     adminRevokeCourseAccess 
   } from '../../lib/supabase';
+  import { idbGetAllPosts, idbDeletePost } from '../../lib/idb';
 
   const staticDataEl = document.getElementById('admin-static-data');
   const { staticPosts = [], staticCourses = [] } = staticDataEl 
@@ -909,6 +910,21 @@ const staticPosts = staticCollection.map(p => ({
         for (const cp of customPosts) {
           if (!posts.some(p => p.slug === cp.slug)) {
             posts.unshift(cp);
+          }
+        }
+      }
+    } catch(e) {}
+
+    // 1.5 Load custom posts from IndexedDB (unlimited persistent storage)
+    try {
+      const idbPosts = await idbGetAllPosts();
+      if (Array.isArray(idbPosts)) {
+        for (const ip of idbPosts) {
+          const idx = posts.findIndex(p => p.slug === ip.slug);
+          if (idx > -1) {
+            posts[idx] = { ...posts[idx], ...ip };
+          } else {
+            posts.unshift(ip);
           }
         }
       }
@@ -1196,6 +1212,11 @@ const staticPosts = staticCollection.map(p => ({
       const customPosts = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
       const filtered = customPosts.filter((p: any) => p.slug !== slug);
       localStorage.setItem('rkmidigi_custom_posts', JSON.stringify(filtered));
+    } catch(e) {}
+
+    // Delete in IndexedDB
+    try {
+      await idbDeletePost(slug);
     } catch(e) {}
 
     // Broadcast deletion

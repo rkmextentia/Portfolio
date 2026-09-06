@@ -19,8 +19,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     html.is-resolving-article #standard-404-container {
       display: none !important;
     }
-    html.is-resolving-article #article-loading-skeleton {
+    html.is-resolving-article:not(.is-article-resolved) #article-loading-skeleton {
       display: block !important;
+    }
+    html.is-article-resolved #article-loading-skeleton,
+    #article-loading-skeleton.hidden {
+      display: none !important;
     }
   </style>
 
@@ -164,6 +168,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <script>
   import { supabase } from '../lib/supabase';
+  import { idbGetPost, idbSavePost } from '../lib/idb';
 
   function extractYouTubeId(url: string): string | null {
     if (!url) return null;
@@ -235,9 +240,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const skeleton = document.getElementById('article-loading-skeleton');
 
     function renderPost(p: any) {
-      if (skeleton) skeleton.style.display = 'none';
-      if (standard404) standard404.style.display = 'none';
-      if (dynamicPost) dynamicPost.classList.remove('hidden');
+      document.documentElement.classList.add('is-article-resolved');
+      document.documentElement.classList.remove('is-resolving-article');
+
+      if (skeleton) {
+        skeleton.classList.add('hidden');
+        skeleton.style.setProperty('display', 'none', 'important');
+      }
+      if (standard404) {
+        standard404.classList.add('hidden');
+        standard404.style.setProperty('display', 'none', 'important');
+      }
+      if (dynamicPost) {
+        dynamicPost.classList.remove('hidden');
+        dynamicPost.style.setProperty('display', 'block', 'important');
+      }
 
       document.title = `${p.title} | RKMIDIGILABS`;
 
@@ -319,10 +336,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return;
     }
 
-    // 2. Query Supabase
+    // 2. Query IndexedDB (unlimited quota persistent browser storage)
     try {
-      const { data, error } = await supabase.from('posts').select('*').eq('slug', slug).maybeSingle();
-      if (data && !error) {
+      const idbPost = await idbGetPost(slug);
+      if (idbPost) {
+        renderPost(idbPost);
+        return;
+      }
+    } catch (idbErr) {}
+
+    // 3. Query Supabase (with strict 2000ms timeout)
+    try {
+      const sbPromise = supabase.from('posts').select('*').eq('slug', slug).maybeSingle();
+      const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ data: null, error: 'TIMEOUT' }), 2000));
+      const res: any = await Promise.race([sbPromise, timeoutPromise]);
+      const data = res?.data;
+      if (data && !res?.error) {
         post = {
           title: data.title,
           slug: data.slug,
@@ -338,7 +367,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           author: data.author || 'RKMIDIGILABS'
         };
 
-        // Cache in localStorage for instant retrieval on subsequent reloads
+        // Cache in IndexedDB and localStorage for subsequent instant loads
+        idbSavePost(post).catch(() => {});
         try {
           const list = JSON.parse(localStorage.getItem('rkmidigi_custom_posts') || '[]');
           if (!list.find((item: any) => item.slug === post.slug)) {
@@ -352,10 +382,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
     } catch(e) {}
 
-    // 3. True 404
+    // 4. True 404 (if not found in any store)
     document.documentElement.classList.remove('is-resolving-article');
-    if (skeleton) skeleton.style.display = 'none';
-    if (standard404) standard404.style.display = 'block';
+    document.documentElement.classList.add('is-article-resolved');
+    if (skeleton) {
+      skeleton.classList.add('hidden');
+      skeleton.style.setProperty('display', 'none', 'important');
+    }
+    if (standard404) {
+      standard404.classList.remove('hidden');
+      standard404.style.setProperty('display', 'block', 'important');
+    }
     document.title = 'Page Not Found (404) | RKMIDIGILABS';
   }
 
