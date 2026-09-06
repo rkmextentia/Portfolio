@@ -16,6 +16,33 @@ const recentPosts = sortedPosts.filter(p => p.id !== featuredPost?.id).slice(0, 
   title="RKMIDIGILABS — Enterprise AI Governance & GRC Practice"
   description="Executive AI Governance, Enterprise GRC Advisory, and Corporate Training by RKMIDIGILABS. Translating the EU AI Act, NIST AI RMF, and ISO 42001 into audit-ready systems."
 >
+  <!-- Instant Pre-paint Script: Suppresses deleted or drafted post cards before browser paint -->
+  <script is:inline>
+    (function() {
+      try {
+        var deleted = JSON.parse(localStorage.getItem('rkmidigi_deleted_posts') || '[]');
+        var toggles = JSON.parse(localStorage.getItem('rkmidigi_post_toggles') || '{}');
+        var css = '';
+        if (Array.isArray(deleted)) {
+          deleted.forEach(function(s) {
+            css += '[data-slug="' + s + '"] { display: none !important; }\n';
+          });
+        }
+        Object.keys(toggles).forEach(function(s) {
+          if (toggles[s] === false) {
+            css += '[data-slug="' + s + '"] { display: none !important; }\n';
+          }
+        });
+        if (css) {
+          var el = document.createElement('style');
+          el.setAttribute('data-rkmidigi-suppress-home', 'true');
+          el.innerHTML = css;
+          document.head.appendChild(el);
+        }
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- Hero Section with black fonts, grey highlights, green buttons -->
   <Hero />
 

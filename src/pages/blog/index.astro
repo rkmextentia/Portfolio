@@ -28,6 +28,33 @@ const filterTabs = [
   title="Blog & Video Analysis"
   description="Official RKMIDIGILABS Blog — Daily articles, regulatory updates, and YouTube video breakdowns on AI Governance, EU AI Act, NIST AI RMF, and Enterprise GRC."
 >
+  <!-- Instant Pre-paint Script: Suppresses deleted or drafted post cards before browser paint -->
+  <script is:inline>
+    (function() {
+      try {
+        var deleted = JSON.parse(localStorage.getItem('rkmidigi_deleted_posts') || '[]');
+        var toggles = JSON.parse(localStorage.getItem('rkmidigi_post_toggles') || '{}');
+        var css = '';
+        if (Array.isArray(deleted)) {
+          deleted.forEach(function(s) {
+            css += '[data-slug="' + s + '"] { display: none !important; }\n';
+          });
+        }
+        Object.keys(toggles).forEach(function(s) {
+          if (toggles[s] === false) {
+            css += '[data-slug="' + s + '"] { display: none !important; }\n';
+          }
+        });
+        if (css) {
+          var el = document.createElement('style');
+          el.setAttribute('data-rkmidigi-suppress', 'true');
+          el.innerHTML = css;
+          document.head.appendChild(el);
+        }
+      } catch(e) {}
+    })();
+  </script>
+
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
     
     <!-- Page Header -->
